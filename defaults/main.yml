@@ -1,0 +1,225 @@
+# SPDX-FileCopyrightText: 2023 - 2024 Nikita Chernyi
+# SPDX-FileCopyrightText: 2023 - 2025 Slavi Pantaleev
+# SPDX-FileCopyrightText: 2024 Julian-Samuel Gebühr
+# SPDX-FileCopyrightText: 2024 Sergio Durigan Junior
+# SPDX-FileCopyrightText: 2025 MASH project contributors
+# SPDX-FileCopyrightText: 2025 Suguru Hirahara
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+---
+# Project source code URL: https://github.com/apache/answer
+
+answer_enabled: true
+
+answer_identifier: answer
+answer_base_path: "/{{ answer_identifier }}"
+answer_data_path: "{{ answer_base_path }}/data"
+
+# renovate: datasource=docker depName=apache/answer versioning=semver
+answer_version: 1.7.0
+
+answer_uid: ""
+answer_gid: ""
+
+answer_scheme: https
+
+# The hostname at which Apache Answer is served.
+answer_hostname: ""
+
+# The path at which Apache Answer is exposed.
+# This value must either be `/` or not end with a slash (e.g. `/answer`).
+#
+# Hosting Apache Answer under a subpath does not seem to be possible due to Apache Answer's
+# technical limitations.
+answer_path_prefix: /
+
+answer_container_image: "{{ answer_container_image_registry_prefix }}apache/answer:{{ answer_container_image_tag }}"
+answer_container_image_tag: "{{ answer_version }}"
+answer_container_image_registry_prefix: "{{ answer_container_image_registry_prefix_upstream }}"
+answer_container_image_registry_prefix_upstream: "{{ answer_container_image_registry_prefix_upstream_default }}"
+answer_container_image_registry_prefix_upstream_default: docker.io/
+answer_container_image_force_pull: "{{ answer_container_image.endswith(':latest') }}"
+
+answer_container_image_self_build: false
+answer_container_image_self_build_name: "apache/answer:{{ answer_container_image_self_build_repo_version }}"
+answer_container_image_self_build_repo: "https://github.com/apache/answer.git"
+answer_container_image_self_build_repo_version: "{{ 'v' + answer_version if answer_version != 'latest' else 'main' }}"
+answer_container_image_self_build_src_files_path: "{{ answer_base_path }}/docker-src"
+
+# Controls whether the container exposes its HTTP port (tcp/80 in the container).
+#
+# Takes an "<ip>:<port>" or "<port>" value (e.g. "127.0.0.1:2586"), or empty string to not expose.
+answer_container_http_host_bind_port: ""
+
+# The base container network. It will be auto-created by this role if it doesn't exist already.
+answer_container_network: "{{ answer_identifier }}"
+
+# The port number in the container
+answer_container_http_port: 80
+
+# A list of additional container networks that the container would be connected to.
+# The role does not create these networks, so make sure they already exist.
+# Use this to expose this container to another reverse proxy, which runs in a different container network.
+answer_container_additional_networks: "{{ answer_container_additional_networks_auto + answer_container_additional_networks_custom }}"
+answer_container_additional_networks_auto: []
+answer_container_additional_networks_custom: []
+
+# A list of additional "volumes" to mount in the container.
+# This list gets populated dynamically at runtime. You can provide a different default value,
+# if you wish to mount your own files into the container.
+# Contains definition objects like this: `{"type": "bind", "src": "/outside", "dst": "/inside", "options": "readonly"}.
+# See the `--mount` documentation for the `docker run` command.
+answer_container_additional_volumes: "{{ answer_container_additional_volumes_auto + answer_container_additional_volumes_custom }}"
+answer_container_additional_volumes_auto: []
+answer_container_additional_volumes_custom: []
+
+# answer_container_labels_traefik_enabled controls whether labels to assist a Traefik reverse-proxy will be attached to the container.
+# See `../templates/labels.j2` for details.
+#
+# To inject your own other container labels, see `answer_container_labels_additional_labels`.
+answer_container_labels_traefik_enabled: true
+answer_container_labels_traefik_docker_network: "{{ answer_container_network }}"
+answer_container_labels_traefik_hostname: "{{ answer_hostname }}"
+# The path prefix must either be `/` or not end with a slash (e.g. `/answer`).
+answer_container_labels_traefik_path_prefix: "{{ answer_path_prefix }}"
+answer_container_labels_traefik_rule: "Host(`{{ answer_container_labels_traefik_hostname }}`){% if answer_container_labels_traefik_path_prefix != '/' %} && PathPrefix(`{{ answer_container_labels_traefik_path_prefix }}`){% endif %}"
+answer_container_labels_traefik_priority: 0
+answer_container_labels_traefik_entrypoints: web-secure
+answer_container_labels_traefik_tls: "{{ answer_container_labels_traefik_entrypoints != 'web' }}"
+answer_container_labels_traefik_tls_certResolver: default  # noqa var-naming
+
+# Controls which additional headers to attach to all HTTP requests.
+# To add your own custom request headers, use `answer_container_labels_traefik_additional_request_headers_custom`
+answer_container_labels_traefik_additional_request_headers: "{{ answer_container_labels_traefik_additional_request_headers_auto | combine(answer_container_labels_traefik_additional_request_headers_custom) }}"
+answer_container_labels_traefik_additional_request_headers_auto: {}
+answer_container_labels_traefik_additional_request_headers_custom: {}
+
+# Controls which additional headers to attach to all HTTP responses.
+# To add your own custom response headers, use `answer_container_labels_traefik_additional_response_headers_custom`
+answer_container_labels_traefik_additional_response_headers: "{{ answer_container_labels_traefik_additional_response_headers_auto | combine(answer_container_labels_traefik_additional_response_headers_custom) }}"
+answer_container_labels_traefik_additional_response_headers_auto: |
+  {{
+    {}
+    | combine ({'X-XSS-Protection': answer_http_header_xss_protection} if answer_http_header_xss_protection else {})
+    | combine ({'X-Content-Type-Options': answer_http_header_content_type_options} if answer_http_header_content_type_options else {})
+    | combine ({'Content-Security-Policy': answer_http_header_content_security_policy} if answer_http_header_content_security_policy else {})
+    | combine ({'Permissions-Policy': answer_http_header_permissions_policy} if answer_http_header_permissions_policy else {})
+    | combine ({'Strict-Transport-Security': answer_http_header_strict_transport_security} if answer_http_header_strict_transport_security and answer_container_labels_traefik_tls else {})
+  }}
+answer_container_labels_traefik_additional_response_headers_custom: {}
+
+# answer_container_labels_additional_labels contains a multiline string with additional labels to add to the container label file.
+# See `../templates/labels.j2` for details.
+#
+# Example:
+# answer_container_labels_additional_labels: |
+#   my.label=1
+#   another.label="here"
+answer_container_labels_additional_labels: ""
+
+# A list of extra arguments to pass to the container (`docker run` command)
+answer_container_extra_arguments: []
+
+# Specifies the value of the `X-XSS-Protection` header
+# Stops pages from loading when they detect reflected cross-site scripting (XSS) attacks.
+#
+# Learn more about it is here:
+# - https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-XSS-Protection
+# - https://portswigger.net/web-security/cross-site-scripting/reflected
+answer_http_header_xss_protection: "1; mode=block"
+
+# Specifies the value of the `X-Content-Type-Options` header.
+# See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Content-Type-Options
+answer_http_header_content_type_options: nosniff
+
+# Specifies the value of the `Content-Security-Policy` header.
+# See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy
+answer_http_header_content_security_policy: frame-ancestors 'self'
+
+# Specifies the value of the `Permissions-Policy` header.
+# See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Permissions-Policy
+answer_http_header_permissions_policy: "{{ 'interest-cohort=()' if answer_floc_optout_enabled else '' }}"
+
+# Specifies the value of the `Strict-Transport-Security` header.
+# See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security
+answer_http_header_strict_transport_security: "max-age=31536000; includeSubDomains{{ '; preload' if answer_hsts_preload_enabled else '' }}"
+
+# Controls whether to send a "Permissions-Policy interest-cohort=();" header along with all responses
+#
+# Learn more about what it is here:
+# - https://www.eff.org/deeplinks/2021/03/googles-floc-terrible-idea
+# - https://paramdeo.com/blog/opting-your-website-out-of-googles-floc-network
+# - https://amifloced.org/
+#
+# Of course, a better solution is to just stop using browsers (like Chrome), which participate in such tracking practices.
+# See: `answer_http_header_permissions_policy`
+answer_floc_optout_enabled: true
+
+# Controls if HSTS preloading is enabled
+#
+# In its strongest and recommended form, the [HSTS policy](https://www.chromium.org/hsts) includes all subdomains, and
+# indicates a willingness to be "preloaded" into browsers:
+# `Strict-Transport-Security: max-age=31536000; includeSubDomains; preload`
+# For more information visit:
+# - https://en.wikipedia.org/wiki/HTTP_Strict_Transport_Security
+# - https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security
+# - https://hstspreload.org/#opt-in
+# See: `answer_http_header_strict_transport_security`
+answer_hsts_preload_enabled: false
+
+# List of systemd services that the Apache Answer systemd service depends on
+answer_systemd_required_services_list: "{{ answer_systemd_required_services_list_default + answer_systemd_required_services_list_auto + answer_systemd_required_services_list_custom }}"
+answer_systemd_required_services_list_default: "{{ [devture_systemd_docker_base_docker_service_name] if devture_systemd_docker_base_docker_service_name else [] }}"
+answer_systemd_required_services_list_auto: []
+answer_systemd_required_services_list_custom: []
+
+# List of systemd services that the Apache Answer systemd service wants
+answer_systemd_wanted_services_list: "{{ answer_systemd_wanted_services_list_default + answer_systemd_wanted_services_list_auto + answer_systemd_wanted_services_list_custom }}"
+answer_systemd_wanted_services_list_default: []
+answer_systemd_wanted_services_list_auto: []
+answer_systemd_wanted_services_list_custom: []
+
+# Specify a database driver to use
+# Valid values: mysql, postgres, sqlite
+answer_database_type: ""
+
+# Specify database configuration
+answer_database_filename: data/answer.db
+answer_database_mysql_hostname: ""
+answer_database_mysql_port: 3306
+answer_database_mysql_username: answer
+answer_database_mysql_password: ""
+answer_database_postgres_hostname: ""
+answer_database_postgres_port: 5432
+answer_database_postgres_username: answer
+answer_database_postgres_password: ""
+answer_database_postgres_sslmode: disable
+answer_database_name: answer
+
+answer_environment_variables_tz: UTC
+
+answer_environment_variables_auto_install: true
+
+answer_environment_variables_language: en-US
+
+answer_environment_variables_site_name: Apache Answer
+
+answer_environment_variables_contact_email: ""
+
+answer_environment_variables_admin_name: ""
+
+answer_environment_variables_admin_password: ""
+
+answer_environment_variables_admin_email: ""
+
+# Specify how images, videos, and media embedded from external websites are displayed
+# Valid values: always_display, ask_before_display
+answer_environment_variables_external_content_display: ask_before_display
+
+# Specify log level
+# Valid values: DEBUG, INFO, WARN, ERROR
+answer_environment_variables_log_level: INFO
+
+# Additional environment variables.
+answer_environment_variables_additional_variables: ""

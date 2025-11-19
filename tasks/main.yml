@@ -1,0 +1,27 @@
+# SPDX-FileCopyrightText: 2023 Slavi Pantaleev
+# SPDX-FileCopyrightText: 2025 Suguru Hirahara
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+---
+- name: Perform Apache Answer installation tasks
+  when: answer_enabled | bool
+  tags:
+    - setup-all
+    - setup-answer
+    - install-all
+    - install-answer
+  block:
+    - name: Validate Apache Answer configuration
+      ansible.builtin.include_tasks: "{{ role_path }}/tasks/validate_config.yml"
+    - name: Install Apache Answer
+      ansible.builtin.include_tasks: "{{ role_path }}/tasks/install.yml"
+
+- name: Perform Apache Answer uninstallation tasks
+  when: not answer_enabled | bool
+  tags:
+    - setup-all
+    - setup-answer
+  block:
+    - name: Uninstall Apache Answer
+      ansible.builtin.include_tasks: "{{ role_path }}/tasks/uninstall.yml"
