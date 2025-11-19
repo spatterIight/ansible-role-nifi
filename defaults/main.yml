@@ -18,7 +18,7 @@ nifi_base_path: "/{{ nifi_identifier }}"
 nifi_data_path: "{{ nifi_base_path }}/data"
 
 # renovate: datasource=docker depName=apache/nifi versioning=semver
-nifi_version: 1.7.0
+nifi_version: 2.6.0
 
 nifi_uid: ""
 nifi_gid: ""
@@ -48,16 +48,16 @@ nifi_container_image_self_build_repo: "https://github.com/apache/nifi.git"
 nifi_container_image_self_build_repo_version: "{{ 'v' + nifi_version if nifi_version != 'latest' else 'main' }}"
 nifi_container_image_self_build_src_files_path: "{{ nifi_base_path }}/docker-src"
 
-# Controls whether the container exposes its HTTP port (tcp/80 in the container).
+# Controls whether the container exposes its HTTPS port (tcp/8443 in the container).
 #
 # Takes an "<ip>:<port>" or "<port>" value (e.g. "127.0.0.1:2586"), or empty string to not expose.
-nifi_container_http_host_bind_port: ""
+nifi_container_https_host_bind_port: ""
 
 # The base container network. It will be auto-created by this role if it doesn't exist already.
 nifi_container_network: "{{ nifi_identifier }}"
 
 # The port number in the container
-nifi_container_http_port: 80
+nifi_container_https_port: 8443
 
 # A list of additional container networks that the container would be connected to.
 # The role does not create these networks, so make sure they already exist.
@@ -181,42 +181,13 @@ nifi_systemd_wanted_services_list_default: []
 nifi_systemd_wanted_services_list_auto: []
 nifi_systemd_wanted_services_list_custom: []
 
-# Specify a database driver to use
-# Valid values: mysql, postgres, sqlite
-nifi_database_type: ""
-
-# Specify database configuration
-nifi_database_filename: data/nifi.db
-nifi_database_mysql_hostname: ""
-nifi_database_mysql_port: 3306
-nifi_database_mysql_username: nifi
-nifi_database_mysql_password: ""
-nifi_database_postgres_hostname: ""
-nifi_database_postgres_port: 5432
-nifi_database_postgres_username: nifi
-nifi_database_postgres_password: ""
-nifi_database_postgres_sslmode: disable
-nifi_database_name: nifi
-
-nifi_environment_variables_tz: UTC
-
-nifi_environment_variables_auto_install: true
-
-nifi_environment_variables_language: en-US
-
-nifi_environment_variables_site_name: Apache NiFi
-
-nifi_environment_variables_contact_email: ""
-
-nifi_environment_variables_admin_name: ""
-
-nifi_environment_variables_admin_password: ""
-
-nifi_environment_variables_admin_email: ""
-
-# Specify how images, videos, and media embedded from external websites are displayed
-# Valid values: always_display, ask_before_display
-nifi_environment_variables_external_content_display: ask_before_display
+# Single User Authentication credentials can be specified using the below environment variables
+# Please note that the password must be 12 characters minimum, otherwise NiFi will generate a random username and password
+# For more information see:
+#   - https://nifi.apache.org/docs/nifi-docs/html/administration-guide.html#single_user_identity_provider
+#   - https://github.com/apache/nifi/blob/d92d9f72a596b5058c9208873a8b637ef80a0b6f/nifi-docker/dockerhub/README.md?plain=1#L110C1-L110C96
+nifi_environment_variables_single_user_credentials_username: ""
+nifi_environment_variables_single_user_credentials_password: ""
 
 # Specify log level
 # Valid values: DEBUG, INFO, WARN, ERROR

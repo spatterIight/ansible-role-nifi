@@ -1,6 +1,7 @@
 {#
 SPDX-FileCopyrightText: 2023 Slavi Pantaleev
 SPDX-FileCopyrightText: 2025 Suguru Hirahara
+SPDX-FileCopyrightText: 2025 spatterlight
 
 SPDX-License-Identifier: AGPL-3.0-or-later
 #}
@@ -53,7 +54,7 @@ traefik.http.routers.{{ nifi_identifier }}.tls={{ nifi_container_labels_traefik_
 traefik.http.routers.{{ nifi_identifier }}.tls.certResolver={{ nifi_container_labels_traefik_tls_certResolver }}
 {% endif %}
 
-traefik.http.services.{{ nifi_identifier }}.loadbalancer.server.port={{ nifi_container_http_port }}
+traefik.http.services.{{ nifi_identifier }}.loadbalancer.server.port={{ nifi_container_https_port }}
 {% endif %}
 
 {{ nifi_container_labels_additional_labels }}
