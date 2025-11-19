@@ -55,6 +55,7 @@ traefik.http.routers.{{ nifi_identifier }}.tls.certResolver={{ nifi_container_la
 {% endif %}
 
 traefik.http.services.{{ nifi_identifier }}.loadbalancer.server.port={{ nifi_container_https_port }}
+traefik.http.services.{{ nifi_identifier }}.loadbalancer.server.scheme=https
 {% endif %}
 
 {{ nifi_container_labels_additional_labels }}
