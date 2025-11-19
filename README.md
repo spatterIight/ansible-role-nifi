@@ -1,13 +1,14 @@
 <!--
 SPDX-FileCopyrightText: 2023 Slavi Pantaleev
 SPDX-FileCopyrightText: 2025 Suguru Hirahara
+SPDX-FileCopyrightText: 2025 spatterlight
 
 SPDX-License-Identifier: AGPL-3.0-or-later
 -->
 
-# Apache Answer Ansible role
+# Apache NiFi Ansible role
 
-This is an [Ansible](https://www.ansible.com/) role which installs [Apache Answer](https://answer.apache.org/) to run as a [Docker](https://www.docker.com/) container wrapped in a systemd service.
+This is an [Ansible](https://www.ansible.com/) role which installs [Apache NiFi](https://nifi.apache.org/) to run as a [Docker](https://www.docker.com/) container wrapped in a systemd service.
 
 This role *implicitly* depends on:
 
@@ -16,7 +17,7 @@ This role *implicitly* depends on:
 
 Check [defaults/main.yml](defaults/main.yml) for the full list of supported options.
 
-💡 See this [document](docs/configuring-answer.md) for details about setting up the service with this role.
+💡 See this [document](docs/configuring-nifi.md) for details about setting up the service with this role.
 
 ## Development
 

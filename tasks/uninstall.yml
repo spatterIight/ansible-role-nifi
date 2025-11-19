@@ -4,82 +4,82 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 ---
-- name: Check existence of Apache Answer systemd service
+- name: Check existence of Apache NiFi systemd service
   ansible.builtin.stat:
-    path: "{{ devture_systemd_docker_base_systemd_path }}/{{ answer_identifier }}.service"
-  register: answer_service_stat
+    path: "{{ devture_systemd_docker_base_systemd_path }}/{{ nifi_identifier }}.service"
+  register: nifi_service_stat
 
-- name: Uninstall Apache Answer systemd services and files
-  when: answer_service_stat.stat.exists | bool
+- name: Uninstall Apache NiFi systemd services and files
+  when: nifi_service_stat.stat.exists | bool
   block:
-    - name: Ensure Apache Answer systemd service is stopped
+    - name: Ensure Apache NiFi systemd service is stopped
       ansible.builtin.service:
-        name: "{{ answer_identifier }}"
+        name: "{{ nifi_identifier }}"
         state: stopped
         enabled: false
         daemon_reload: true
 
-    - name: Ensure Apache Answer systemd service does not exist
+    - name: Ensure Apache NiFi systemd service does not exist
       ansible.builtin.file:
-        path: "{{ devture_systemd_docker_base_systemd_path }}/{{ answer_identifier }}.service"
+        path: "{{ devture_systemd_docker_base_systemd_path }}/{{ nifi_identifier }}.service"
         state: absent
 
-    - name: Ensure Apache Answer support files do not exist
+    - name: Ensure Apache NiFi support files do not exist
       ansible.builtin.file:
-        path: "{{ answer_base_path }}/{{ item }}"
+        path: "{{ nifi_base_path }}/{{ item }}"
         state: absent
       with_items:
         - env
         - labels
 
-    - name: Ensure Apache Answer image source files path does not exist
+    - name: Ensure Apache NiFi image source files path does not exist
       ansible.builtin.file:
-        path: "{{ answer_container_image_self_build_src_files_path }}"
+        path: "{{ nifi_container_image_self_build_src_files_path }}"
         state: absent
 
-    - name: Ensure Apache Answer local data path does not exist if empty
+    - name: Ensure Apache NiFi local data path does not exist if empty
       ansible.builtin.command:
-        cmd: "rmdir {{ answer_data_path }}"
-      register: answer_data_path_deletion_result
-      changed_when: answer_data_path_deletion_result.rc == 0
+        cmd: "rmdir {{ nifi_data_path }}"
+      register: nifi_data_path_deletion_result
+      changed_when: nifi_data_path_deletion_result.rc == 0
       failed_when: false
 
-    - name: Ensure Apache Answer base path does not exist if empty
+    - name: Ensure Apache NiFi base path does not exist if empty
       ansible.builtin.command:
-        cmd: "rmdir {{ answer_base_path }}"
-      register: answer_base_path_deletion_result
-      changed_when: answer_base_path_deletion_result.rc == 0
+        cmd: "rmdir {{ nifi_base_path }}"
+      register: nifi_base_path_deletion_result
+      changed_when: nifi_base_path_deletion_result.rc == 0
       failed_when: false
 
-    - name: Ensure Apache Answer container network does not exist via community.docker.docker_network
+    - name: Ensure Apache NiFi container network does not exist via community.docker.docker_network
       when: devture_systemd_docker_base_container_network_creation_method == 'ansible-module'
       community.docker.docker_network:
-        name: "{{ answer_container_network }}"
+        name: "{{ nifi_container_network }}"
         state: absent
 
-    - name: Ensure Apache Answer container network does not exist via ansible.builtin.command
+    - name: Ensure Apache NiFi container network does not exist via ansible.builtin.command
       when: devture_systemd_docker_base_container_network_creation_method == 'command'
       ansible.builtin.command:
         cmd: >-
           {{ devture_systemd_docker_base_host_command_docker }} network rm
-          {{ answer_container_network }}
+          {{ nifi_container_network }}
       register: network_deletion_result
-      changed_when: answer_container_network in network_deletion_result.stdout
+      changed_when: nifi_container_network in network_deletion_result.stdout
 
-- name: Check existence of Apache Answer local data path
+- name: Check existence of Apache NiFi local data path
   ansible.builtin.stat:
-    path: "{{ answer_data_path }}"
-  register: answer_data_path_stat
+    path: "{{ nifi_data_path }}"
+  register: nifi_data_path_stat
 
 # We just want to notify the user. Deleting data is too destructive.
-- name: Notify if Apache Answer local data remains
-  when: answer_data_path_stat.stat.exists | bool
+- name: Notify if Apache NiFi local data remains
+  when: nifi_data_path_stat.stat.exists | bool
   ansible.builtin.set_fact:
     devture_playbook_runtime_messages_list: |
       {{
         devture_playbook_runtime_messages_list | default([])
         +
         [
-          "Note: As the local Apache Answer instance has been removed, some old data remains in `" + answer_data_path + "`. Feel free to delete it."
+          "Note: As the local Apache NiFi instance has been removed, some old data remains in `" + nifi_data_path + "`. Feel free to delete it."
         ]
       }}

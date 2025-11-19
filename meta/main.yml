@@ -1,10 +1,8 @@
 ---
 galaxy_info:
-  author: Suguru Hirahara
-  company: progressiv
-  role_name: answer
-  namespace: progressiv
-  description: Apache Answer
+  author: spatterlight
+  role_name: nifi
+  description: An Ansible role for installing Apache NiFi, a system to process and distribute data
   platforms:
     - name: Debian
       versions:

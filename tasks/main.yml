@@ -4,24 +4,24 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 ---
-- name: Perform Apache Answer installation tasks
-  when: answer_enabled | bool
+- name: Perform Apache NiFi installation tasks
+  when: nifi_enabled | bool
   tags:
     - setup-all
-    - setup-answer
+    - setup-nifi
     - install-all
-    - install-answer
+    - install-nifi
   block:
-    - name: Validate Apache Answer configuration
+    - name: Validate Apache NiFi configuration
       ansible.builtin.include_tasks: "{{ role_path }}/tasks/validate_config.yml"
-    - name: Install Apache Answer
+    - name: Install Apache NiFi
       ansible.builtin.include_tasks: "{{ role_path }}/tasks/install.yml"
 
-- name: Perform Apache Answer uninstallation tasks
-  when: not answer_enabled | bool
+- name: Perform Apache NiFi uninstallation tasks
+  when: not nifi_enabled | bool
   tags:
     - setup-all
-    - setup-answer
+    - setup-nifi
   block:
-    - name: Uninstall Apache Answer
+    - name: Uninstall Apache NiFi
       ansible.builtin.include_tasks: "{{ role_path }}/tasks/uninstall.yml"

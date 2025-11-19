@@ -7,12 +7,12 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 #}
 
 [Unit]
-Description=Apache Answer ({{ answer_identifier }})
-{% for service in answer_systemd_required_services_list %}
+Description=Apache NiFi ({{ nifi_identifier }})
+{% for service in nifi_systemd_required_services_list %}
 Requires={{ service }}
 After={{ service }}
 {% endfor %}
-{% for service in answer_systemd_wanted_services_list %}
+{% for service in nifi_systemd_wanted_services_list %}
 Wants={{ service }}
 {% endfor %}
 DefaultDependencies=no
@@ -20,43 +20,43 @@ DefaultDependencies=no
 [Service]
 Type=simple
 Environment="HOME={{ devture_systemd_docker_base_systemd_unit_home_path }}"
-ExecStartPre=-{{ devture_systemd_docker_base_host_command_sh }} -c '{{ devture_systemd_docker_base_host_command_docker }} stop -t {{ devture_systemd_docker_base_container_stop_grace_time_seconds }} {{ answer_identifier }} 2>/dev/null || true'
-ExecStartPre=-{{ devture_systemd_docker_base_host_command_sh }} -c '{{ devture_systemd_docker_base_host_command_docker }} rm {{ answer_identifier }} 2>/dev/null || true'
+ExecStartPre=-{{ devture_systemd_docker_base_host_command_sh }} -c '{{ devture_systemd_docker_base_host_command_docker }} stop -t {{ devture_systemd_docker_base_container_stop_grace_time_seconds }} {{ nifi_identifier }} 2>/dev/null || true'
+ExecStartPre=-{{ devture_systemd_docker_base_host_command_sh }} -c '{{ devture_systemd_docker_base_host_command_docker }} rm {{ nifi_identifier }} 2>/dev/null || true'
 
 ExecStartPre={{ devture_systemd_docker_base_host_command_docker }} create \
       --rm \
-      --name={{ answer_identifier }} \
+      --name={{ nifi_identifier }} \
       --log-driver=none \
-      --user={{ answer_uid }}:{{ answer_gid }} \
+      --user={{ nifi_uid }}:{{ nifi_gid }} \
       --cap-drop=ALL \
       --read-only \
-      --network={{ answer_container_network }} \
-      {% if answer_container_http_host_bind_port %}
-      -p {{ answer_container_http_host_bind_port }}:{{ answer_container_http_port }} \
+      --network={{ nifi_container_network }} \
+      {% if nifi_container_http_host_bind_port %}
+      -p {{ nifi_container_http_host_bind_port }}:{{ nifi_container_http_port }} \
       {% endif %}
-      --env-file={{ answer_base_path }}/env \
-      --label-file={{ answer_base_path }}/labels \
-      --mount type=bind,src={{ answer_data_path }},dst=/data \
-      {% for volume in answer_container_additional_volumes %}
+      --env-file={{ nifi_base_path }}/env \
+      --label-file={{ nifi_base_path }}/labels \
+      --mount type=bind,src={{ nifi_data_path }},dst=/data \
+      {% for volume in nifi_container_additional_volumes %}
       --mount type={{ volume.type | default('bind' if '/' in volume.src else 'volume') }},src={{ volume.src }},dst={{ volume.dst }}{{ (',' + volume.options) if volume.options else '' }} \
       {% endfor %}
-      {% for arg in answer_container_extra_arguments %}
+      {% for arg in nifi_container_extra_arguments %}
       {{ arg }} \
       {% endfor %}
-      {{ answer_container_image_self_build_name if answer_container_image_self_build else answer_container_image }}
+      {{ nifi_container_image_self_build_name if nifi_container_image_self_build else nifi_container_image }}
 
-{% for network in answer_container_additional_networks %}
-ExecStartPre={{ devture_systemd_docker_base_host_command_docker }} network connect {{ network }} {{ answer_identifier }}
+{% for network in nifi_container_additional_networks %}
+ExecStartPre={{ devture_systemd_docker_base_host_command_docker }} network connect {{ network }} {{ nifi_identifier }}
 {% endfor %}
 
-ExecStart={{ devture_systemd_docker_base_host_command_docker }} start --attach {{ answer_identifier }}
+ExecStart={{ devture_systemd_docker_base_host_command_docker }} start --attach {{ nifi_identifier }}
 
-ExecStop=-{{ devture_systemd_docker_base_host_command_sh }} -c '{{ devture_systemd_docker_base_host_command_docker }} stop -t {{ devture_systemd_docker_base_container_stop_grace_time_seconds }} {{ answer_identifier }} 2>/dev/null || true'
-ExecStop=-{{ devture_systemd_docker_base_host_command_sh }} -c '{{ devture_systemd_docker_base_host_command_docker }} rm {{ answer_identifier }} 2>/dev/null || true'
+ExecStop=-{{ devture_systemd_docker_base_host_command_sh }} -c '{{ devture_systemd_docker_base_host_command_docker }} stop -t {{ devture_systemd_docker_base_container_stop_grace_time_seconds }} {{ nifi_identifier }} 2>/dev/null || true'
+ExecStop=-{{ devture_systemd_docker_base_host_command_sh }} -c '{{ devture_systemd_docker_base_host_command_docker }} rm {{ nifi_identifier }} 2>/dev/null || true'
 
 Restart=always
 RestartSec=30
-SyslogIdentifier={{ answer_identifier }}
+SyslogIdentifier={{ nifi_identifier }}
 
 [Install]
 WantedBy=multi-user.target
