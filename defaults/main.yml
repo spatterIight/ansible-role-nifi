@@ -189,9 +189,10 @@ nifi_systemd_wanted_services_list_custom: []
 nifi_environment_variables_single_user_credentials_username: ""
 nifi_environment_variables_single_user_credentials_password: ""
 
-# Specify log level
-# Valid values: DEBUG, INFO, WARN, ERROR
-nifi_environment_variables_log_level: INFO
-
-# Additional environment variables.
-nifi_environment_variables_additional_variables: ""
+# nifi_environment_variables_additional_variables contains a multiline string with additional environment variables to pass to the container.
+#
+# Example:
+# nifi_environment_variables_additional_variables: |
+#   VAR=1
+#   ANOTHER=value
+nifi_environment_variables_additional_variables: ''
