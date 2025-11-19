@@ -139,7 +139,7 @@ After logging in as the administrator, you can configure settings of the instanc
 
 ## Troubleshooting
 
-FAQ is available on [this page](https://nifi.apache.org/docs/faq).
+User guide is available on [this page](https://nifi.apache.org/docs/nifi-docs/html/user-guide.html).
 
 ### Check the service's logs
 

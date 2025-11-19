@@ -2,6 +2,7 @@
 # SPDX-FileCopyrightText: 2023 MASH project contributors
 # SPDX-FileCopyrightText: 2023 - 2025 Slavi Pantaleev
 # SPDX-FileCopyrightText: 2025 Suguru Hirahara
+# SPDX-FileCopyrightText: 2025 spatterlight
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -17,49 +18,6 @@
     - nifi_hostname
     - nifi_path_prefix
     - nifi_container_network
-
-- name: Run if automatic installation with environment variables is enabled
-  when: nifi_environment_variables_auto_install | bool
-  block:
-    - name: Fail if required Apache NiFi settings for automatic installation not defined
-      ansible.builtin.fail:
-        msg: >-
-          You need to define a required configuration setting (`{{ item }}`).
-      when: "lookup('vars', item, default='') | string | length == 0"
-      with_items:
-        - nifi_database_type
-        - nifi_environment_variables_admin_email
-        - nifi_environment_variables_admin_password
-
-    - name: Fail if Apache NiFi password is more than 32 characters in length
-      ansible.builtin.fail:
-        msg: >-
-          Password specified to `nifi_environment_variables_admin_password` must be at maximum 32 characters in length
-      when: "nifi_environment_variables_admin_password | length > 32"
-
-    - name: Fail if Apache NiFi database type is invalid
-      ansible.builtin.fail:
-        msg: >-
-          nifi_database_type must be 'mysql', 'postgres', or 'sqlite'.
-      when: "nifi_database_type not in ['mysql', 'postgres', 'sqlite']"
-
-    - name: Fail if required Apache NiFi + MySQL integration settings not defined
-      ansible.builtin.fail:
-        msg: >-
-          You need to define a required configuration setting (`{{ item }}`) when `nifi_database_type` is `mysql`
-      when: "nifi_database_type == 'mysql' and lookup('vars', item, default='') | string | length == 0"
-      with_items:
-        - nifi_database_mysql_hostname
-        - nifi_database_mysql_password
-
-    - name: Fail if required Apache NiFi + Postgres integration settings not defined
-      ansible.builtin.fail:
-        msg: >-
-          You need to define a required configuration setting (`{{ item }}`) when `nifi_database_type` is `postgres`
-      when: "nifi_database_type == 'postgres' and lookup('vars', item, default='') | string | length == 0"
-      with_items:
-        - nifi_database_postgres_hostname
-        - nifi_database_postgres_password
 
 - name: Run if Traefik is enabled
   when: nifi_container_labels_traefik_enabled | bool
