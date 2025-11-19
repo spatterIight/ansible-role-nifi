@@ -15,6 +15,12 @@
   with_items:
     - "{{ nifi_base_path }}"
     - "{{ nifi_data_path }}"
+    - "{{ nifi_data_path }}/database_repository"
+    - "{{ nifi_data_path }}/flowfile_repository"
+    - "{{ nifi_data_path }}/content_repository"
+    - "{{ nifi_data_path }}/provenance_repository"
+    - "{{ nifi_data_path }}/state"
+    - "{{ nifi_data_path }}/logs"
 
 - name: Ensure Apache NiFi support files installed
   ansible.builtin.template:
