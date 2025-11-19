@@ -30,6 +30,7 @@ ExecStartPre={{ devture_systemd_docker_base_host_command_docker }} create \
       --log-driver=none \
       --user={{ nifi_uid }}:{{ nifi_gid }} \
       --cap-drop=ALL \
+      --cap-add=DAC_OVERRIDE \
       --read-only \
       --network={{ nifi_container_network }} \
       {% if nifi_container_https_host_bind_port %}
