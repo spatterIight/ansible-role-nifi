@@ -47,6 +47,8 @@
     - state-management.xml
     - zookeeper.properties
 
+- ansible.builtin.include_tasks: "{{ role_path }}/tasks/customize.yml"
+
 - name: Ensure Apache NiFi support files installed
   ansible.builtin.template:
     src: "{{ role_path }}/templates/{{ item }}.j2"

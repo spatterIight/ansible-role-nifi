@@ -1,0 +1,82 @@
+---
+# - name: Update nifi.properties
+#   lineinfile:
+#     path: "{{ nifi_config_dirs.home }}/conf/nifi.properties"
+#     line: "{{ item.key }}={{ item.value }}"
+#     regexp: "^{{ item.key }}="
+#   with_dict: "{{ nifi_properties }}"
+#
+# - name: Update bootstrap.conf
+#   lineinfile:
+#     path: "{{ nifi_config_dirs.home }}/conf/bootstrap.conf"
+#     line: "{{ item.key }}={{ item.value }}"
+#     regexp: "^{{ item.key }}="
+#   with_dict: "{{ bootstrap }}"
+#
+# - name: Update nifi-env.sh
+#   lineinfile:
+#     path: "{{ nifi_config_dirs.home }}/bin/nifi-env.sh"
+#     line: "export {{ item.key }}={{ item.value }}"
+#     regexp: "^export {{ item.key }}="
+#   with_dict: "{{ nifi_env }}"
+
+- name: Update state-management.xml
+  community.general.xml:
+    path: "{{ item.path }}"
+    xpath: "{{ item.parameters.xpath | default(omit) }}"
+    value: "{{ item.parameters.value | default(omit) }}"
+    state: "{{ item.parameters.state | default(omit) }}"
+    pretty_print: "{{ item.parameters.pretty_print | default(true) }}"
+  with_items:
+    - { "path": "{{ nifi_tempdir.path }}/state-management.xml", "parameters": "{{ nifi_state_management }}" }
+
+# - name: Update logback.xml
+#   community.general.xml:
+#     path: "{{ nifi_config_dirs.home }}/conf/logback.xml"
+#     xpath: "{{ item.key }}"
+#     value: "{{ item.value }}"
+#     pretty_print: yes
+#   with_dict: "{{ logback }}"
+#
+# - name: Update login-identity-providers.xml
+#   block:
+#     - name: Seed login-identity-providers.xml
+#       template:
+#         src: "templates/login-identity-providers.xml.j2"
+#         dest: "{{ nifi_config_dirs.home }}/conf/login-identity-providers.xml"
+#     - name: Add properties to login-identity-providers.xml
+#       community.general.xml:
+#         path: "{{ nifi_config_dirs.home }}/conf/login-identity-providers.xml"
+#         xpath: "{{ item.key }}"
+#         value: "{{ item.value }}"
+#         pretty_print: yes
+#       with_dict: "{{ login_identity_providers }}"
+#   when: login_identity_providers | length
+#
+# - name: Update authorizers.xml
+#   block:
+#     - name: Seed authorizers.xml
+#       template:
+#         src: "templates/authorizers.xml.j2"
+#         dest: "{{ nifi_config_dirs.home }}/conf/authorizers.xml"
+#     - name: Add properties to authorizers.xml
+#       community.general.xml:
+#         path: "{{ nifi_config_dirs.home }}/conf/authorizers.xml"
+#         xpath: "{{ item.key }}"
+#         value: "{{ item.value }}"
+#         pretty_print: yes
+#       with_dict: "{{ authorizers }}"
+#   when: authorizers | length
+#
+# - name: Remove server line in zookeeper.properties
+#   lineinfile:
+#     state: absent
+#     path: "{{ nifi_config_dirs.home }}/conf/zookeeper.properties"
+#     regexp: "^server.*$"
+#
+# - name: Update config in zookeeper.properties
+#   lineinfile:
+#     path: "{{ nifi_config_dirs.home }}/conf/zookeeper.properties"
+#     line: "{{ item.key }}={{ item.value }}"
+#     regexp: "^{{ item.key }}"
+#   with_dict: "{{ zookeeper }}"

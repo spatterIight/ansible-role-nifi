@@ -200,4 +200,9 @@ nifi_environment_variables_web_proxy_host: "{{ nifi_hostname }}:443, {{ nifi_hos
 # nifi_environment_variables_additional_variables: |
 #   VAR=1
 #   ANOTHER=value
-nifi_environment_variables_additional_variables: ''
+nifi_environment_variables_additional_variables: ""
+
+# nifi_state_management contains a list of dictionaries
+nifi_state_management:
+  - xpath: /stateManagement/local-provider/property[@name="Directory"]
+    value: "{{ nifi_config_dirs.external_config }}/state/local"
