@@ -211,7 +211,7 @@ nifi_environment_variables_additional_variables: ""
 #     value: "single-user-authorizer"
 #   - xpath: /authorizers/authorizer/class
 #     value: "org.apache.nifi.authorization.single.user.SingleUserAuthorizer"
-nifi_authorizers_xml:
+nifi_authorizers_xml: []
 
 # nifi_logback_xml contains a list of dictionaries of XPath expressions
 # This can be used to add, modify, or remove any property from the default 'state-management.xml` stored in files/

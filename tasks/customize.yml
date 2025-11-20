@@ -13,7 +13,7 @@
 #     regexp: "^{{ item.key }}="
 #   with_dict: "{{ bootstrap }}"
 
-- name: Update state-management.xml
+- name: Ensure XML configuration files have the defined adjustments
   community.general.xml:
     path: "{{ item.path }}"
     xpath: "{{ item.parameters.xpath | default(omit) }}"
