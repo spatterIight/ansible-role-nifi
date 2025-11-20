@@ -46,6 +46,13 @@ To enable Apache NiFi with this role, add the following configuration to your `v
 
 nifi_enabled: true
 
+# Put a strong password in the value field, generated with `pwgen -s 64 1` or in another way
+# For more information see:
+#   - https://nifi.apache.org/docs/nifi-docs/html/administration-guide.html#security_properties
+nifi_conf_nifi_properties:
+  - key: nifi.sensitive.props.key
+    value: ''
+
 ########################################################################
 #                                                                      #
 # /nifi                                                              #
@@ -96,11 +103,13 @@ Take a look at:
 
 - [`defaults/main.yml`](../defaults/main.yml) for the `nifi_conf_*` variables that you can customize via your `vars.yml` file.
 
-To configure a default admin username and password add the following configuration to your `vars.yml` file. Please note that the password must be 12 characters minimum.
+To configure a default username and password add the following configuration to your `vars.yml` file. Please note that the password must be 12 characters minimum.
 
 ```yaml
-nifi_environment_variables_single_user_credentials_username: "my-admin-username"
-nifi_environment_variables_single_user_credentials_password: "my-secure-admin-password"
+nifi_environment_variables_single_user_credentials_username: "admin"
+
+# Put a strong password below, generated with `pwgen -s 64 1` or in another way
+nifi_environment_variables_single_user_credentials_password: ""
 ```
 
 #### Supported environment variables
