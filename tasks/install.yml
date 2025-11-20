@@ -21,6 +21,7 @@
     - "{{ nifi_data_path }}/provenance_repository"
     - "{{ nifi_data_path }}/state"
     - "{{ nifi_data_path }}/logs"
+    - "{{ nifi_data_path }}/conf"
 
 - name: Ensure Apache NiFi support files installed
   ansible.builtin.template:

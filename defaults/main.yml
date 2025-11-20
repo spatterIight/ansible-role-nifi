@@ -189,6 +189,11 @@ nifi_systemd_wanted_services_list_custom: []
 nifi_environment_variables_single_user_credentials_username: ""
 nifi_environment_variables_single_user_credentials_password: ""
 
+# What HTTP host headers should be accepted by NiFi
+# For more information see:
+#   - https://nifi.apache.org/docs/nifi-docs/html/administration-guide.html#proxy_configuration
+nifi_environment_variables_web_proxy_host: "{{ nifi_hostname }}:443, {{ nifi_hostname }}:80"
+
 # nifi_environment_variables_additional_variables contains a multiline string with additional environment variables to pass to the container.
 #
 # Example:

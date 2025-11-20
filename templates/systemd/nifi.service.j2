@@ -43,6 +43,7 @@ ExecStartPre={{ devture_systemd_docker_base_host_command_docker }} create \
       --mount type=bind,src={{ nifi_data_path }}/provenance_repository,dst=/opt/nifi/nifi-current/provenance_repository \
       --mount type=bind,src={{ nifi_data_path }}/state,dst=/opt/nifi/nifi-current/state \
       --mount type=bind,src={{ nifi_data_path }}/logs,dst=/opt/nifi/nifi-current/logs \
+      --mount type=bind,src={{ nifi_data_path }}/conf,dst=/opt/nifi/nifi-current/conf \
       {% for volume in nifi_container_additional_volumes %}
       --mount type={{ volume.type | default('bind' if '/' in volume.src else 'volume') }},src={{ volume.src }},dst={{ volume.dst }}{{ (',' + volume.options) if volume.options else '' }} \
       {% endfor %}
