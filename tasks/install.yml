@@ -23,6 +23,22 @@
     - "{{ nifi_data_path }}/logs"
     - "{{ nifi_data_path }}/conf"
 
+- name: Ensure Apache NiFi configuration files installed
+  ansible.builtin.copy:
+    src: "{{ role_path }}/files/{{ item }}"
+    dest: "{{ nifi_data_path }}/conf/{{ item }}"
+    mode: "0640"
+    owner: "{{ nifi_uid }}"
+    group: "{{ nifi_gid }}"
+  with_items:
+    - authorizers.xml
+    - bootstrap.conf
+    - logback.xml
+    - login-identity-providers.xml
+    - nifi.properties
+    - state-management.xml
+    - zookeeper.properties
+
 - name: Ensure Apache NiFi support files installed
   ansible.builtin.template:
     src: "{{ role_path }}/templates/{{ item }}.j2"
