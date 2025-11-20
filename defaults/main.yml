@@ -23,8 +23,6 @@ nifi_version: 2.6.0
 nifi_uid: ""
 nifi_gid: ""
 
-nifi_scheme: https
-
 # The hostname at which Apache NiFi is served.
 nifi_hostname: ""
 
