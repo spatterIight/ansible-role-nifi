@@ -78,7 +78,7 @@
   ansible.builtin.copy:
     src: "{{ nifi_tempdir.path }}/{{ item.file }}"
     dest: "{{ nifi_data_path }}/conf/{{ item.file }}"
-    remote_src: yes
+    remote_src: true
     mode: "0640"
     owner: "{{ nifi_uid }}"
     group: "{{ nifi_gid }}"
