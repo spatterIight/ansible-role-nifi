@@ -211,6 +211,7 @@ To get started, open the URL with a web browser to log in to the instance.
 To log in to the instance use your configured credentials, or the randomly generated ones printed to the log.
 
 Log Example:
+
 ```bash
 Nov 20 13:20:24 server mash-nifi[1990462]: Generated Username [d4a56f91-fcaf-4f6b-b83f-b21ea177c25b]
 Nov 20 13:20:24 server mash-nifi[1990462]: Generated Password [tlRhxiDso0cvWrLROwtkagpmk1Qwx1Rt]
