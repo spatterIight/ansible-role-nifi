@@ -69,21 +69,23 @@ After adjusting the hostname, make sure to adjust your DNS records to point the 
 
 Since the Apache NiFi container only supports listening via HTTPS it is necessary to configure Traefik to skip verifying Apache NiFi's HTTPS certificate (since it self-signed).
 
-To do this a custom `serversTransports` must be defined in Traefik's **static** configuration.
+To do this a custom `serversTransports` must be defined in Traefik's **dynamic** configuration.
 
 ```yaml
-serversTransports:
-  insecure-nifi-transport:
-    insecureSkipVerify: true
+http:
+  serversTransports:
+    insecure-nifi-transport:
+      insecureSkipVerify: true
 ```
 
 Or, if you are using the [MASH Traefik](https://github.com/mother-of-all-self-hosting/mash-playbook) role.
 
 ```yaml
-traefik_configuration_extension_yaml: |
-  serversTransports:
-    {{ nifi_container_labels_traefik_serverstransport }}:
-      insecureSkipVerify: true
+traefik_provider_configuration_extension_yaml: |
+  http:
+    serversTransports:
+      insecure-nifi-transport:
+        insecureSkipVerify: true
 ```
 
 ### Adjusting the Apache NiFi configuration

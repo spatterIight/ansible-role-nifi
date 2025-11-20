@@ -110,7 +110,7 @@ nifi_container_labels_traefik_additional_response_headers_custom: {}
 
 # Controls which `serversTransports` Traefik uses to route traffic to the NiFi backend
 # Useful for setting a custom serversTransports which disables HTTPS certificate verification on the backend
-nifi_container_labels_traefik_serverstransport: insecure-nifi-transport
+nifi_container_labels_traefik_serverstransport: insecure-nifi-transport@file
 
 # nifi_container_labels_additional_labels contains a multiline string with additional labels to add to the container label file.
 # See `../templates/labels.j2` for details.
