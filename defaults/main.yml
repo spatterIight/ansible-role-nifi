@@ -202,7 +202,44 @@ nifi_environment_variables_web_proxy_host: "{{ nifi_hostname }}:443, {{ nifi_hos
 #   ANOTHER=value
 nifi_environment_variables_additional_variables: ""
 
-# nifi_state_management contains a list of dictionaries
-nifi_state_management:
-  - xpath: /stateManagement/local-provider/property[@name="Directory"]
-    value: "/state/local"
+# nifi_authorizers_xml contains a list of dictionaries of XPath expressions
+# This can be used to add, modify, or remove any property from the default 'state-management.xml` stored in files/
+#
+# Example:
+# nifi_authorizers_xml:
+#   - xpath: /authorizers/authorizer/identifier
+#     value: "single-user-authorizer"
+#   - xpath: /authorizers/authorizer/class
+#     value: "org.apache.nifi.authorization.single.user.SingleUserAuthorizer"
+nifi_authorizers_xml:
+
+# nifi_logback_xml contains a list of dictionaries of XPath expressions
+# This can be used to add, modify, or remove any property from the default 'state-management.xml` stored in files/
+#
+# Example:
+# nifi_logback_xml:
+#   - xpath: /configuration/appender[@name="APP_FILE"]/rollingPolicy/maxFileSize
+#     value: "100MB"
+#   - xpath: /configuration/appender[@name="APP_FILE"]/rollingPolicy/maxHistory
+#     value: "30"
+nifi_logback_xml: []
+
+# nifi_login_identity_providers_xml contains a list of dictionaries of XPath expressions
+# This can be used to add, modify, or remove any property from the default 'state-management.xml` stored in files/
+#
+# Example:
+# nifi_login_identity_providers_xml:
+#   - xpath: /loginIdentityProviders/provider/identifier
+#     value: "single-user-provider"
+#   - xpath: /loginIdentityProviders/provider/class
+#     value: "org.apache.nifi.authentication.single.user.SingleUserLoginIdentityProvider"
+nifi_login_identity_providers_xml: []
+
+# nifi_state_management_xml contains a list of dictionaries of XPath expressions
+# This can be used to add, modify, or remove any property from the default 'state-management.xml` stored in files/
+#
+# Example:
+# nifi_state_management_xml:
+#   - xpath: /stateManagement/local-provider/property[@name="Directory"]
+#     value: "/state/local"
+nifi_state_management_xml: []
