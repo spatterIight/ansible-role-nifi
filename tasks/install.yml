@@ -23,13 +23,21 @@
     - "{{ nifi_data_path }}/logs"
     - "{{ nifi_data_path }}/conf"
 
-- name: Ensure Apache NiFi configuration files installed
+- name: Ensure Apache Nifi temporary configuration customization directory exists
+  ansible.builtin.tempfile:
+    state: directory
+    suffix: nifi
+  changed_when: false
+  register: nifi_tempdir
+
+- name: Copy Apache NiFi default configuration files for customization
   ansible.builtin.copy:
     src: "{{ role_path }}/files/{{ item }}"
-    dest: "{{ nifi_data_path }}/conf/{{ item }}"
+    dest: "{{ nifi_tempdir.path }}/{{ item }}"
     mode: "0640"
     owner: "{{ nifi_uid }}"
     group: "{{ nifi_gid }}"
+  changed_when: false
   with_items:
     - authorizers.xml
     - bootstrap.conf
