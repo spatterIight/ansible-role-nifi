@@ -67,7 +67,7 @@ After adjusting the hostname, make sure to adjust your DNS records to point the 
 
 ### Adjusting the Traefik configuration
 
-Since the Apache NiFi container only supports listening via HTTPS it is neccesary to configure Traefik to skip verifying Apache NiFi's HTTPS certificate (since it self-signed).
+Since the Apache NiFi container only supports listening via HTTPS it is necessary to configure Traefik to skip verifying Apache NiFi's HTTPS certificate (since it self-signed).
 
 To do this a custom `serversTransports` must be defined in Traefik's **static** configuration.
 
