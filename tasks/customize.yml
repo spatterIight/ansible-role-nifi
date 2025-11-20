@@ -1,18 +1,4 @@
 ---
-# - name: Update nifi.properties
-#   lineinfile:
-#     path: "{{ nifi_config_dirs.home }}/conf/nifi.properties"
-#     line: "{{ item.key }}={{ item.value }}"
-#     regexp: "^{{ item.key }}="
-#   with_dict: "{{ nifi_properties }}"
-#
-# - name: Update bootstrap.conf
-#   lineinfile:
-#     path: "{{ nifi_config_dirs.home }}/conf/bootstrap.conf"
-#     line: "{{ item.key }}={{ item.value }}"
-#     regexp: "^{{ item.key }}="
-#   with_dict: "{{ bootstrap }}"
-
 - name: Ensure Apache NiFi XML configuration files have the defined adjustments
   community.general.xml:
     path: "{{ nifi_tempdir.path }}/{{ item.file }}"
@@ -22,12 +8,22 @@
     pretty_print: "{{ item.parameters.pretty_print | default(true) }}"
   changed_when: false
   with_items:
-    - { "file": "authorizers.xml", "parameters": "{{ nifi_authorizers_xml }}" }
-    - { "file": "logback.xml", "parameters": "{{ nifi_logback_xml }}" }
-    - { "file": "login-identity-providers.xml", "parameters": "{{ nifi_login_identity_providers_xml }}" }
-    - { "file": "state-management.xml", "parameters": "{{ nifi_state_management_xml }}" }
+    - { "file": "authorizers.xml", "parameters": "{{ nifi_conf_authorizers_xml }}" }
+    - { "file": "logback.xml", "parameters": "{{ nifi_conf_logback_xml }}" }
+    - { "file": "login-identity-providers.xml", "parameters": "{{ nifi_conf_login_identity_providers_xml }}" }
+    - { "file": "state-management.xml", "parameters": "{{ nifi_conf_state_management_xml }}" }
 
-- name: Ensure Apache NiFi adjusted XML configuration files installed
+    - name: Ensure Apache NiFi properties configuration files have the defined adjustments
+  ansible.builtin.lineinfile:
+    path: "{{ nifi_tempdir.path }}/{{ item.file }}"
+    line: "{{ item.parameters.key }}={{ item.parameters.value }}"
+    regexp: "^{{ item.parameters.key }}="
+    state: "{{ item.parameters.state | default('present') }}"
+  with_items:
+    - { "file": "nifi.properties", "parameters": "{{ nifi_conf_nifi_properties }}" }
+    - { "file": "zookeeper.properties", "parameters": "{{ nifi_conf_zookeeper_properties }}" }
+
+- name: Ensure Apache NiFi adjusted configuration files installed
   ansible.builtin.copy:
     src: "{{ nifi_tempdir.path }}/{{ item.file }}"
     dest: "{{ nifi_data_path }}/conf/{{ item.file }}"
@@ -40,6 +36,15 @@
     - { "file": "logback.xml" }
     - { "file": "login-identity-providers.xml" }
     - { "file": "state-management.xml" }
+    - { "file": "nifi.properties" }
+    - { "file": "zookeeper.properties" }
+
+# - name: Update bootstrap.conf
+#   lineinfile:
+#     path: "{{ nifi_config_dirs.home }}/conf/bootstrap.conf"
+#     line: "{{ item.key }}={{ item.value }}"
+#     regexp: "^{{ item.key }}="
+#   with_dict: "{{ bootstrap }}"
 
 # - name: Remove server line in zookeeper.properties
 #   lineinfile:

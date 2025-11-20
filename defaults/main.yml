@@ -202,44 +202,65 @@ nifi_environment_variables_web_proxy_host: "{{ nifi_hostname }}:443, {{ nifi_hos
 #   ANOTHER=value
 nifi_environment_variables_additional_variables: ""
 
-# nifi_authorizers_xml contains a list of dictionaries of XPath expressions
+# nifi_conf_authorizers_xml contains a list of dictionaries of XPath expressions
 # This can be used to add, modify, or remove any property from the default 'state-management.xml` stored in files/
 #
 # Example:
-# nifi_authorizers_xml:
+# nifi_conf_authorizers_xml:
 #   - xpath: /authorizers/authorizer/identifier
-#     value: "single-user-authorizer"
+#     value: single-user-authorizer
 #   - xpath: /authorizers/authorizer/class
-#     value: "org.apache.nifi.authorization.single.user.SingleUserAuthorizer"
-nifi_authorizers_xml: []
+#     value: org.apache.nifi.authorization.single.user.SingleUserAuthorizer
+nifi_conf_authorizers_xml: []
 
-# nifi_logback_xml contains a list of dictionaries of XPath expressions
+# nifi_conf_logback_xml contains a list of dictionaries of XPath expressions
 # This can be used to add, modify, or remove any property from the default 'state-management.xml` stored in files/
 #
 # Example:
-# nifi_logback_xml:
+# nifi_conf_logback_xml:
 #   - xpath: /configuration/appender[@name="APP_FILE"]/rollingPolicy/maxFileSize
-#     value: "100MB"
+#     value: 100MB
 #   - xpath: /configuration/appender[@name="APP_FILE"]/rollingPolicy/maxHistory
-#     value: "30"
-nifi_logback_xml: []
+#     value: 30
+nifi_conf_logback_xml: []
 
-# nifi_login_identity_providers_xml contains a list of dictionaries of XPath expressions
+# nifi_conf_login_identity_providers_xml contains a list of dictionaries of XPath expressions
 # This can be used to add, modify, or remove any property from the default 'state-management.xml` stored in files/
 #
 # Example:
-# nifi_login_identity_providers_xml:
+# nifi_conf_login_identity_providers_xml:
 #   - xpath: /loginIdentityProviders/provider/identifier
-#     value: "single-user-provider"
+#     value: single-user-provider
 #   - xpath: /loginIdentityProviders/provider/class
-#     value: "org.apache.nifi.authentication.single.user.SingleUserLoginIdentityProvider"
-nifi_login_identity_providers_xml: []
+#     value: org.apache.nifi.authentication.single.user.SingleUserLoginIdentityProvider
+nifi_conf_login_identity_providers_xml: []
 
-# nifi_state_management_xml contains a list of dictionaries of XPath expressions
+# nifi_conf_state_management_xml contains a list of dictionaries of XPath expressions
 # This can be used to add, modify, or remove any property from the default 'state-management.xml` stored in files/
 #
 # Example:
-# nifi_state_management_xml:
+# nifi_conf_state_management_xml:
 #   - xpath: /stateManagement/local-provider/property[@name="Directory"]
-#     value: "/state/local"
-nifi_state_management_xml: []
+#     value: /state/local
+nifi_conf_state_management_xml: []
+
+# nifi_conf_nifi_properties contains a list of dictionaries of key value pairs
+# This can be used to add, modify, or remove any property from the default 'nifi.properties` stored in files/
+#
+# Example:
+# nifi_conf_nifi_properties:
+#   - key: nifi.flow.configuration.archive.dir
+#     value: ./conf/archive/
+#   - key: nifi.nar.library.directory.custom
+#     value: ./conf/custom_nars
+#     state: absent
+nifi_conf_nifi_properties: []
+
+# nifi_conf_zookeeper_properties contains a list of dictionaries of key value pairs
+# This can be used to add, modify, or remove any property from the default 'nifi.properties` stored in files/
+#
+# Example:
+# nifi_conf_zookeeper_properties:
+#   - key: dataDir
+#     value: ./state/zookeeper
+nifi_conf_zookeeper_properties: []
