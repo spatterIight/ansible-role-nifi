@@ -264,3 +264,14 @@ nifi_conf_nifi_properties: []
 #   - key: dataDir
 #     value: ./state/zookeeper
 nifi_conf_zookeeper_properties: []
+
+# nifi_conf_bootstrap_conf contains a list of dictionaries of key value pairs
+# This can be used to add, modify, or remove any property from the default 'nifi.properties` stored in files/
+#
+# Example:
+# nifi_conf_bootstrap_conf:
+#   - key: java.arg.2
+#     value: -Xms512m
+#   - key: java.arg.3
+#     value: -Xmx512m
+nifi_conf_bootstrap_conf: []
