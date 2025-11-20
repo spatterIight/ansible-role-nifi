@@ -15,13 +15,15 @@
 
 - name: Ensure Apache NiFi properties configuration files have the defined adjustments
   ansible.builtin.lineinfile:
-    path: "{{ nifi_tempdir.path }}/{{ item.file }}"
-    line: "{{ item.parameters.key }}={{ item.parameters.value }}"
-    regexp: "^{{ item.parameters.key }}="
-    state: "{{ item.parameters.state | default('present') }}"
-  with_items:
-    - { "file": "nifi.properties", "parameters": "{{ nifi_conf_nifi_properties }}" }
-    - { "file": "zookeeper.properties", "parameters": "{{ nifi_conf_zookeeper_properties }}" }
+    path: "{{ nifi_tempdir.path }}/{{ item.0.file }}"
+    line: "{{ item.1.key }}={{ item.1.value }}"
+    regexp: "^{{ item.1.key }}="
+    state: "{{ item.1.state | default('present') }}"
+  changed_when: false
+  with_subelements:
+    - - { "file": "nifi.properties", "parameters": "{{ nifi_conf_nifi_properties }}" }
+      - { "file": "zookeeper.properties", "parameters": "{{ nifi_conf_zookeeper_properties }}" }
+    - parameters
 
 - name: Ensure Apache NiFi adjusted configuration files installed
   ansible.builtin.copy:
@@ -45,16 +47,3 @@
 #     line: "{{ item.key }}={{ item.value }}"
 #     regexp: "^{{ item.key }}="
 #   with_dict: "{{ bootstrap }}"
-
-# - name: Remove server line in zookeeper.properties
-#   lineinfile:
-#     state: absent
-#     path: "{{ nifi_config_dirs.home }}/conf/zookeeper.properties"
-#     regexp: "^server.*$"
-#
-# - name: Update config in zookeeper.properties
-#   lineinfile:
-#     path: "{{ nifi_config_dirs.home }}/conf/zookeeper.properties"
-#     line: "{{ item.key }}={{ item.value }}"
-#     regexp: "^{{ item.key }}"
-#   with_dict: "{{ zookeeper }}"
