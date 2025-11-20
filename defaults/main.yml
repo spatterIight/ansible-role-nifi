@@ -205,4 +205,4 @@ nifi_environment_variables_additional_variables: ""
 # nifi_state_management contains a list of dictionaries
 nifi_state_management:
   - xpath: /stateManagement/local-provider/property[@name="Directory"]
-    value: "{{ nifi_config_dirs.external_config }}/state/local"
+    value: "/state/local"
