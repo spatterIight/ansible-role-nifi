@@ -29,7 +29,7 @@ See the project's [documentation](https://nifi.apache.org/docs/nifi-docs/) to le
 
 ## Prerequisites
 
-To deploy Apache NiFi using this role it is necessary that the [community.general](https://github.com/ansible-collections/community.general) be installed. This is needed to support modifying XML configuration files.
+To deploy Apache NiFi using this role it is necessary that the [community.general](https://github.com/ansible-collections/community.general) collection be installed. This is needed to support modifying XML configuration files.
 
 ## Adjusting the playbook configuration
 
