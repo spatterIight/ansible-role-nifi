@@ -65,7 +65,28 @@ After adjusting the hostname, make sure to adjust your DNS records to point the 
 
 **Note**: hosting Apache NiFi under a subpath (by configuring the `nifi_path_prefix` variable) does not seem to be possible due to Apache NiFi's technical limitations.
 
-### Adjusting the configuration
+### Adjusting the Traefik configuration
+
+Since the Apache NiFi container only supports listening via HTTPS it is neccesary to configure Traefik to skip verifying Apache NiFi's HTTPS certificate (since it self-signed).
+
+To do this a custom `serversTransports` must be defined in Traefik's **static** configuration.
+
+```yaml
+serversTransports:
+  insecure-nifi-transport:
+    insecureSkipVerify: true
+```
+
+Or, if you are using the [MASH Traefik](https://github.com/mother-of-all-self-hosting/mash-playbook) role.
+
+```yaml
+traefik_configuration_extension_yaml: |
+  serversTransports:
+    {{ nifi_container_labels_traefik_serverstransport }}:
+      insecureSkipVerify: true
+```
+
+### Adjusting the Apache NiFi configuration
 
 There are some additional things you may wish to configure about the component.
 
