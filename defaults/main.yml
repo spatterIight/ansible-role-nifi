@@ -1,0 +1,277 @@
+# SPDX-FileCopyrightText: 2023 - 2024 Nikita Chernyi
+# SPDX-FileCopyrightText: 2023 - 2025 Slavi Pantaleev
+# SPDX-FileCopyrightText: 2024 Julian-Samuel Gebühr
+# SPDX-FileCopyrightText: 2024 Sergio Durigan Junior
+# SPDX-FileCopyrightText: 2025 MASH project contributors
+# SPDX-FileCopyrightText: 2025 Suguru Hirahara
+# SPDX-FileCopyrightText: 2025 spatterlight
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+---
+# Project source code URL: https://github.com/apache/nifi
+
+nifi_enabled: true
+
+nifi_identifier: nifi
+nifi_base_path: "/{{ nifi_identifier }}"
+nifi_data_path: "{{ nifi_base_path }}/data"
+
+# renovate: datasource=docker depName=apache/nifi versioning=semver
+nifi_version: 2.6.0
+
+nifi_uid: ""
+nifi_gid: ""
+
+nifi_scheme: https
+
+# The hostname at which Apache NiFi is served.
+nifi_hostname: ""
+
+# The path at which Apache NiFi is exposed.
+# This value must either be `/` or not end with a slash (e.g. `/nifi`).
+#
+# Hosting Apache NiFi under a subpath does not seem to be possible due to Apache NiFi's
+# technical limitations.
+nifi_path_prefix: /
+
+nifi_container_image: "{{ nifi_container_image_registry_prefix }}apache/nifi:{{ nifi_container_image_tag }}"
+nifi_container_image_tag: "{{ nifi_version }}"
+nifi_container_image_registry_prefix: "{{ nifi_container_image_registry_prefix_upstream }}"
+nifi_container_image_registry_prefix_upstream: "{{ nifi_container_image_registry_prefix_upstream_default }}"
+nifi_container_image_registry_prefix_upstream_default: docker.io/
+nifi_container_image_force_pull: "{{ nifi_container_image.endswith(':latest') }}"
+
+nifi_container_image_self_build: false
+nifi_container_image_self_build_name: "apache/nifi:{{ nifi_container_image_self_build_repo_version }}"
+nifi_container_image_self_build_repo: "https://github.com/apache/nifi.git"
+nifi_container_image_self_build_repo_version: "{{ 'v' + nifi_version if nifi_version != 'latest' else 'main' }}"
+nifi_container_image_self_build_src_files_path: "{{ nifi_base_path }}/docker-src"
+
+# Controls whether the container exposes its HTTPS port (tcp/8443 in the container).
+#
+# Takes an "<ip>:<port>" or "<port>" value (e.g. "127.0.0.1:2586"), or empty string to not expose.
+nifi_container_https_host_bind_port: ""
+
+# The base container network. It will be auto-created by this role if it doesn't exist already.
+nifi_container_network: "{{ nifi_identifier }}"
+
+# The port number in the container
+nifi_container_https_port: 8443
+
+# A list of additional container networks that the container would be connected to.
+# The role does not create these networks, so make sure they already exist.
+# Use this to expose this container to another reverse proxy, which runs in a different container network.
+nifi_container_additional_networks: "{{ nifi_container_additional_networks_auto + nifi_container_additional_networks_custom }}"
+nifi_container_additional_networks_auto: []
+nifi_container_additional_networks_custom: []
+
+# A list of additional "volumes" to mount in the container.
+# This list gets populated dynamically at runtime. You can provide a different default value,
+# if you wish to mount your own files into the container.
+# Contains definition objects like this: `{"type": "bind", "src": "/outside", "dst": "/inside", "options": "readonly"}.
+# See the `--mount` documentation for the `docker run` command.
+nifi_container_additional_volumes: "{{ nifi_container_additional_volumes_auto + nifi_container_additional_volumes_custom }}"
+nifi_container_additional_volumes_auto: []
+nifi_container_additional_volumes_custom: []
+
+# nifi_container_labels_traefik_enabled controls whether labels to assist a Traefik reverse-proxy will be attached to the container.
+# See `../templates/labels.j2` for details.
+#
+# To inject your own other container labels, see `nifi_container_labels_additional_labels`.
+nifi_container_labels_traefik_enabled: true
+nifi_container_labels_traefik_docker_network: "{{ nifi_container_network }}"
+nifi_container_labels_traefik_hostname: "{{ nifi_hostname }}"
+# The path prefix must either be `/` or not end with a slash (e.g. `/nifi`).
+nifi_container_labels_traefik_path_prefix: "{{ nifi_path_prefix }}"
+nifi_container_labels_traefik_rule: "Host(`{{ nifi_container_labels_traefik_hostname }}`){% if nifi_container_labels_traefik_path_prefix != '/' %} && PathPrefix(`{{ nifi_container_labels_traefik_path_prefix }}`){% endif %}"
+nifi_container_labels_traefik_priority: 0
+nifi_container_labels_traefik_entrypoints: web-secure
+nifi_container_labels_traefik_tls: "{{ nifi_container_labels_traefik_entrypoints != 'web' }}"
+nifi_container_labels_traefik_tls_certResolver: default  # noqa var-naming
+
+# Controls which additional headers to attach to all HTTP requests.
+# To add your own custom request headers, use `nifi_container_labels_traefik_additional_request_headers_custom`
+nifi_container_labels_traefik_additional_request_headers: "{{ nifi_container_labels_traefik_additional_request_headers_auto | combine(nifi_container_labels_traefik_additional_request_headers_custom) }}"
+nifi_container_labels_traefik_additional_request_headers_auto: {}
+nifi_container_labels_traefik_additional_request_headers_custom: {}
+
+# Controls which additional headers to attach to all HTTP responses.
+# To add your own custom response headers, use `nifi_container_labels_traefik_additional_response_headers_custom`
+nifi_container_labels_traefik_additional_response_headers: "{{ nifi_container_labels_traefik_additional_response_headers_auto | combine(nifi_container_labels_traefik_additional_response_headers_custom) }}"
+nifi_container_labels_traefik_additional_response_headers_auto: |
+  {{
+    {}
+    | combine ({'X-XSS-Protection': nifi_http_header_xss_protection} if nifi_http_header_xss_protection else {})
+    | combine ({'X-Content-Type-Options': nifi_http_header_content_type_options} if nifi_http_header_content_type_options else {})
+    | combine ({'Content-Security-Policy': nifi_http_header_content_security_policy} if nifi_http_header_content_security_policy else {})
+    | combine ({'Permissions-Policy': nifi_http_header_permissions_policy} if nifi_http_header_permissions_policy else {})
+    | combine ({'Strict-Transport-Security': nifi_http_header_strict_transport_security} if nifi_http_header_strict_transport_security and nifi_container_labels_traefik_tls else {})
+  }}
+nifi_container_labels_traefik_additional_response_headers_custom: {}
+
+# nifi_container_labels_additional_labels contains a multiline string with additional labels to add to the container label file.
+# See `../templates/labels.j2` for details.
+#
+# Example:
+# nifi_container_labels_additional_labels: |
+#   my.label=1
+#   another.label="here"
+nifi_container_labels_additional_labels: ""
+
+# A list of extra arguments to pass to the container (`docker run` command)
+nifi_container_extra_arguments: []
+
+# Specifies the value of the `X-XSS-Protection` header
+# Stops pages from loading when they detect reflected cross-site scripting (XSS) attacks.
+#
+# Learn more about it is here:
+# - https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-XSS-Protection
+# - https://portswigger.net/web-security/cross-site-scripting/reflected
+nifi_http_header_xss_protection: "1; mode=block"
+
+# Specifies the value of the `X-Content-Type-Options` header.
+# See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Content-Type-Options
+nifi_http_header_content_type_options: nosniff
+
+# Specifies the value of the `Content-Security-Policy` header.
+# See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy
+nifi_http_header_content_security_policy: frame-ancestors 'self'
+
+# Specifies the value of the `Permissions-Policy` header.
+# See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Permissions-Policy
+nifi_http_header_permissions_policy: "{{ 'interest-cohort=()' if nifi_floc_optout_enabled else '' }}"
+
+# Specifies the value of the `Strict-Transport-Security` header.
+# See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security
+nifi_http_header_strict_transport_security: "max-age=31536000; includeSubDomains{{ '; preload' if nifi_hsts_preload_enabled else '' }}"
+
+# Controls whether to send a "Permissions-Policy interest-cohort=();" header along with all responses
+#
+# Learn more about what it is here:
+# - https://www.eff.org/deeplinks/2021/03/googles-floc-terrible-idea
+# - https://paramdeo.com/blog/opting-your-website-out-of-googles-floc-network
+# - https://amifloced.org/
+#
+# Of course, a better solution is to just stop using browsers (like Chrome), which participate in such tracking practices.
+# See: `nifi_http_header_permissions_policy`
+nifi_floc_optout_enabled: true
+
+# Controls if HSTS preloading is enabled
+#
+# In its strongest and recommended form, the [HSTS policy](https://www.chromium.org/hsts) includes all subdomains, and
+# indicates a willingness to be "preloaded" into browsers:
+# `Strict-Transport-Security: max-age=31536000; includeSubDomains; preload`
+# For more information visit:
+# - https://en.wikipedia.org/wiki/HTTP_Strict_Transport_Security
+# - https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security
+# - https://hstspreload.org/#opt-in
+# See: `nifi_http_header_strict_transport_security`
+nifi_hsts_preload_enabled: false
+
+# List of systemd services that the Apache NiFi systemd service depends on
+nifi_systemd_required_services_list: "{{ nifi_systemd_required_services_list_default + nifi_systemd_required_services_list_auto + nifi_systemd_required_services_list_custom }}"
+nifi_systemd_required_services_list_default: "{{ [devture_systemd_docker_base_docker_service_name] if devture_systemd_docker_base_docker_service_name else [] }}"
+nifi_systemd_required_services_list_auto: []
+nifi_systemd_required_services_list_custom: []
+
+# List of systemd services that the Apache NiFi systemd service wants
+nifi_systemd_wanted_services_list: "{{ nifi_systemd_wanted_services_list_default + nifi_systemd_wanted_services_list_auto + nifi_systemd_wanted_services_list_custom }}"
+nifi_systemd_wanted_services_list_default: []
+nifi_systemd_wanted_services_list_auto: []
+nifi_systemd_wanted_services_list_custom: []
+
+# Single User Authentication credentials can be specified using the below environment variables
+# Please note that the password must be 12 characters minimum, otherwise NiFi will generate a random username and password
+# For more information see:
+#   - https://nifi.apache.org/docs/nifi-docs/html/administration-guide.html#single_user_identity_provider
+#   - https://github.com/apache/nifi/blob/d92d9f72a596b5058c9208873a8b637ef80a0b6f/nifi-docker/dockerhub/README.md?plain=1#L110C1-L110C96
+nifi_environment_variables_single_user_credentials_username: ""
+nifi_environment_variables_single_user_credentials_password: ""
+
+# What HTTP host headers should be accepted by NiFi
+# For more information see:
+#   - https://nifi.apache.org/docs/nifi-docs/html/administration-guide.html#proxy_configuration
+nifi_environment_variables_web_proxy_host: "{{ nifi_hostname }}:443, {{ nifi_hostname }}:80"
+
+# nifi_environment_variables_additional_variables contains a multiline string with additional environment variables to pass to the container.
+#
+# Example:
+# nifi_environment_variables_additional_variables: |
+#   VAR=1
+#   ANOTHER=value
+nifi_environment_variables_additional_variables: ""
+
+# nifi_conf_authorizers_xml contains a list of dictionaries of XPath expressions
+# This can be used to add, modify, or remove any property from the default 'state-management.xml` stored in files/
+#
+# Example:
+# nifi_conf_authorizers_xml:
+#   - xpath: /authorizers/authorizer/identifier
+#     value: single-user-authorizer
+#   - xpath: /authorizers/authorizer/class
+#     value: org.apache.nifi.authorization.single.user.SingleUserAuthorizer
+nifi_conf_authorizers_xml: []
+
+# nifi_conf_logback_xml contains a list of dictionaries of XPath expressions
+# This can be used to add, modify, or remove any property from the default 'state-management.xml` stored in files/
+#
+# Example:
+# nifi_conf_logback_xml:
+#   - xpath: /configuration/appender[@name="APP_FILE"]/rollingPolicy/maxFileSize
+#     value: 100MB
+#   - xpath: /configuration/appender[@name="APP_FILE"]/rollingPolicy/maxHistory
+#     value: 30
+nifi_conf_logback_xml: []
+
+# nifi_conf_login_identity_providers_xml contains a list of dictionaries of XPath expressions
+# This can be used to add, modify, or remove any property from the default 'state-management.xml` stored in files/
+#
+# Example:
+# nifi_conf_login_identity_providers_xml:
+#   - xpath: /loginIdentityProviders/provider/identifier
+#     value: single-user-provider
+#   - xpath: /loginIdentityProviders/provider/class
+#     value: org.apache.nifi.authentication.single.user.SingleUserLoginIdentityProvider
+nifi_conf_login_identity_providers_xml: []
+
+# nifi_conf_state_management_xml contains a list of dictionaries of XPath expressions
+# This can be used to add, modify, or remove any property from the default 'state-management.xml` stored in files/
+#
+# Example:
+# nifi_conf_state_management_xml:
+#   - xpath: /stateManagement/local-provider/property[@name="Directory"]
+#     value: /state/local
+nifi_conf_state_management_xml: []
+
+# nifi_conf_nifi_properties contains a list of dictionaries of key value pairs
+# This can be used to add, modify, or remove any property from the default 'nifi.properties` stored in files/
+#
+# Example:
+# nifi_conf_nifi_properties:
+#   - key: nifi.flow.configuration.archive.dir
+#     value: ./conf/archive/
+#   - key: nifi.nar.library.directory.custom
+#     value: ./conf/custom_nars
+#     state: absent
+nifi_conf_nifi_properties: []
+
+# nifi_conf_zookeeper_properties contains a list of dictionaries of key value pairs
+# This can be used to add, modify, or remove any property from the default 'nifi.properties` stored in files/
+#
+# Example:
+# nifi_conf_zookeeper_properties:
+#   - key: dataDir
+#     value: ./state/zookeeper
+nifi_conf_zookeeper_properties: []
+
+# nifi_conf_bootstrap_conf contains a list of dictionaries of key value pairs
+# This can be used to add, modify, or remove any property from the default 'nifi.properties` stored in files/
+#
+# Example:
+# nifi_conf_bootstrap_conf:
+#   - key: java.arg.2
+#     value: -Xms512m
+#   - key: java.arg.3
+#     value: -Xmx512m
+nifi_conf_bootstrap_conf: []

@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: 2023 Slavi Pantaleev
+# SPDX-FileCopyrightText: 2025 Suguru Hirahara
+# SPDX-FileCopyrightText: 2025 spatterlight
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+---
+- name: Perform Apache NiFi installation tasks
+  when: nifi_enabled | bool
+  tags:
+    - setup-all
+    - setup-nifi
+    - install-all
+    - install-nifi
+  block:
+    - name: Validate Apache NiFi configuration
+      ansible.builtin.include_tasks: "{{ role_path }}/tasks/validate_config.yml"
+    - name: Install Apache NiFi
+      ansible.builtin.include_tasks: "{{ role_path }}/tasks/install.yml"
+
+- name: Perform Apache NiFi uninstallation tasks
+  when: not nifi_enabled | bool
+  tags:
+    - setup-all
+    - setup-nifi
+  block:
+    - name: Uninstall Apache NiFi
+      ansible.builtin.include_tasks: "{{ role_path }}/tasks/uninstall.yml"
