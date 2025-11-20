@@ -13,18 +13,33 @@
 #     regexp: "^{{ item.key }}="
 #   with_dict: "{{ bootstrap }}"
 
-- name: Ensure XML configuration files have the defined adjustments
+- name: Ensure Apache NiFi XML configuration files have the defined adjustments
   community.general.xml:
-    path: "{{ item.path }}"
+    path: "{{ nifi_tempdir.path }}/{{ item.file }}"
     xpath: "{{ item.parameters.xpath | default(omit) }}"
     value: "{{ item.parameters.value | default(omit) }}"
     state: "{{ item.parameters.state | default('present') }}"
     pretty_print: "{{ item.parameters.pretty_print | default(true) }}"
+  changed_when: false
   with_items:
-    - { "path": "{{ nifi_tempdir.path }}/authorizers.xml", "parameters": "{{ nifi_authorizers_xml }}" }
-    - { "path": "{{ nifi_tempdir.path }}/logback.xml", "parameters": "{{ nifi_logback_xml }}" }
-    - { "path": "{{ nifi_tempdir.path }}/login-identity-providers.xml", "parameters": "{{ nifi_login_identity_providers_xml }}" }
-    - { "path": "{{ nifi_tempdir.path }}/state-management.xml", "parameters": "{{ nifi_state_management_xml }}" }
+    - { "file": "authorizers.xml", "parameters": "{{ nifi_authorizers_xml }}" }
+    - { "file": "logback.xml", "parameters": "{{ nifi_logback_xml }}" }
+    - { "file": "login-identity-providers.xml", "parameters": "{{ nifi_login_identity_providers_xml }}" }
+    - { "file": "state-management.xml", "parameters": "{{ nifi_state_management_xml }}" }
+
+- name: Ensure Apache NiFi adjusted XML configuration files installed
+  ansible.builtin.copy:
+    src: "{{ nifi_tempdir.path }}/{{ item.file }}"
+    dest: "{{ nifi_data_path }}/conf/{{ item.file }}"
+    remote_src: yes
+    mode: "0640"
+    owner: "{{ nifi_uid }}"
+    group: "{{ nifi_gid }}"
+  with_items:
+    - { "file": "authorizers.xml" }
+    - { "file": "logback.xml" }
+    - { "file": "login-identity-providers.xml" }
+    - { "file": "state-management.xml" }
 
 # - name: Remove server line in zookeeper.properties
 #   lineinfile:
