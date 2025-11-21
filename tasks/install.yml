@@ -51,17 +51,18 @@
 
 - name: Ensure Apache NiFi XML configuration files have the defined adjustments
   community.general.xml:
-    path: "{{ nifi_tempdir.path }}/{{ item.file }}"
-    xpath: "{{ item.parameters.xpath | default(omit) }}"
-    value: "{{ item.parameters.value | default(omit) }}"
-    state: "{{ item.parameters.state | default('present') }}"
-    pretty_print: "{{ item.parameters.pretty_print | default(true) }}"
+    path: "{{ nifi_tempdir.path }}/{{ item.0.file }}"
+    xpath: "{{ item.1.xpath }}"
+    value: "{{ item.1.value | default(omit) }}"
+    state: "{{ item.1.state | default('present') }}"
+    pretty_print: "{{ item.1.pretty_print | default(true) }}"
   changed_when: false
-  with_items:
-    - { "file": "authorizers.xml", "parameters": "{{ nifi_conf_authorizers_xml }}" }
-    - { "file": "logback.xml", "parameters": "{{ nifi_conf_logback_xml }}" }
-    - { "file": "login-identity-providers.xml", "parameters": "{{ nifi_conf_login_identity_providers_xml }}" }
-    - { "file": "state-management.xml", "parameters": "{{ nifi_conf_state_management_xml }}" }
+  with_subelements:
+    - - { "file": "authorizers.xml", "parameters": "{{ nifi_conf_authorizers_xml }}" }
+      - { "file": "logback.xml", "parameters": "{{ nifi_conf_logback_xml }}" }
+      - { "file": "login-identity-providers.xml", "parameters": "{{ nifi_conf_login_identity_providers_xml }}" }
+      - { "file": "state-management.xml", "parameters": "{{ nifi_conf_state_management_xml }}" }
+    - parameters
 
 - name: Ensure Apache NiFi properties configuration files have the defined adjustments
   ansible.builtin.lineinfile:
