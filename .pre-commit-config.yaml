@@ -1,7 +1,7 @@
 ---
 default_install_hook_types: [pre-push]
 
-exclude: '^(LICENSES|files)/'
+exclude: '^(LICENSES|files/conf|files/scripts)/'
 
 # See: https://pre-commit.com/hooks.html
 repos:
