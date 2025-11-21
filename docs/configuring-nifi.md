@@ -50,12 +50,23 @@ To enable Apache NiFi with this role, add the following configuration to your `v
 
 nifi_enabled: true
 
-# Put a strong password in the value field, generated with `pwgen -s 64 1` or in another way
-# For more information see:
-#   - https://nifi.apache.org/docs/nifi-docs/html/administration-guide.html#security_properties
-nifi_conf_nifi_properties:
-  - key: nifi.sensitive.props.key
-    value: ''
+# A passphrase used to generate a self-signed certificate
+# which is used to serve Apache NiFi via HTTPS internally
+# Generate one using `pwgen -s 64 1`, or some other way
+nifi_self_signed_cert_passphrase: ""
+
+# A passphrase used to encrypt sensitive values inputted into NiFi
+# Generate one using `pwgen -s 64 1`, or some other way
+nifi_sensitive_props_key: ""
+
+# The admin username and password. The password must be 12 characters. The salt must be exactly 22 characters, and does not necessarily need to be changed from the example below.
+# Generate a password using `pwgen -s 32 1`, or some other way
+nifi_conf_login_identity_providers_xml:
+  - xpath: /loginIdentityProviders/provider/property[@name='Username']
+    value: admin
+
+  - xpath: /loginIdentityProviders/provider/property[@name='Password']
+    value: "{{ 'my-secure-password' | password_hash(hashtype='bcrypt', salt='0tfETQ5kFWhcT4oPwdbHbL') }}"
 
 ########################################################################
 #                                                                      #
@@ -106,15 +117,6 @@ There are some additional things you may wish to configure about the component.
 Take a look at:
 
 - [`defaults/main.yml`](../defaults/main.yml) for the `nifi_conf_*` variables that you can customize via your `vars.yml` file.
-
-To configure a default username and password add the following configuration to your `vars.yml` file. Please note that the password must be 12 characters minimum.
-
-```yaml
-nifi_environment_variables_single_user_credentials_username: "admin"
-
-# Put a strong password below, generated with `pwgen -s 64 1` or in another way
-nifi_environment_variables_single_user_credentials_password: ""
-```
 
 ## Installing
 
