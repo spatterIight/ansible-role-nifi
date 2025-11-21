@@ -16,6 +16,7 @@ nifi_enabled: true
 nifi_identifier: nifi
 nifi_base_path: "/{{ nifi_identifier }}"
 nifi_data_path: "{{ nifi_base_path }}/data"
+nifi_scripts_path: "{{ nifi_base_path }}/scripts"
 
 # renovate: datasource=docker depName=apache/nifi versioning=semver
 nifi_version: 2.6.0

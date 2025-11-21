@@ -15,6 +15,7 @@
   with_items:
     - "{{ nifi_base_path }}"
     - "{{ nifi_data_path }}"
+    - "{{ nifi_scripts_path }}"
     - "{{ nifi_data_path }}/database_repository"
     - "{{ nifi_data_path }}/flowfile_repository"
     - "{{ nifi_data_path }}/content_repository"
@@ -32,7 +33,7 @@
 
 - name: Copy Apache NiFi default configuration files for customization
   ansible.builtin.copy:
-    src: "{{ role_path }}/files/{{ item }}"
+    src: "{{ role_path }}/files/conf/{{ item }}"
     dest: "{{ nifi_tempdir.path }}/{{ item }}"
     mode: "0640"
     owner: "{{ nifi_uid }}"
@@ -101,6 +102,19 @@
   with_items:
     - env
     - labels
+
+- name: Ensure Apache NiFi custom scripts installed
+  ansible.builtin.copy:
+    src: "{{ role_path }}/files/scripts/{{ item }}"
+    dest: "{{ nifi_scripts_path }}/{{ item }}"
+    mode: "0751"
+    owner: "{{ nifi_uid }}"
+    group: "{{ nifi_gid }}"
+  with_items:
+    - common.sh
+    - secure.sh
+    - start.sh
+    - update_oidc_properties.sh
 
 - name: Run if self-building of Apache NiFi container image is not enabled
   when: "not nifi_container_image_self_build | bool"
