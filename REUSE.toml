@@ -15,7 +15,7 @@ path = [
     ".yamllint.yml",
     "meta/main.yml",
     "files/scripts/*",
-    "files/conf/*",
+    "files/conf/*"
 ]
 SPDX-FileCopyrightText = "NONE"
 SPDX-License-Identifier = "CC0-1.0"
