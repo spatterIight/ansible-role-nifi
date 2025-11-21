@@ -44,6 +44,7 @@ ExecStartPre={{ devture_systemd_docker_base_host_command_docker }} create \
       --mount type=bind,src={{ nifi_data_path }}/state,dst=/opt/nifi/nifi-current/state \
       --mount type=bind,src={{ nifi_data_path }}/logs,dst=/opt/nifi/nifi-current/logs \
       --mount type=bind,src={{ nifi_data_path }}/conf,dst=/opt/nifi/nifi-current/conf \
+      --mount type=bind,src={{ nifi_certs_path }},dst=/opt/nifi/nifi-current/certs \
 #       --mount type=bind,src={{ nifi_scripts_path }}/common.sh,dst=/opt/nifi/scripts/common.sh \
 #       --mount type=bind,src={{ nifi_scripts_path }}/secure.sh,dst=/opt/nifi/scripts/secure.sh \
 #       --mount type=bind,src={{ nifi_scripts_path }}/start.sh,dst=/opt/nifi/scripts/start.sh \

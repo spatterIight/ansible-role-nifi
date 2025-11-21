@@ -17,6 +17,7 @@ nifi_identifier: nifi
 nifi_base_path: "/{{ nifi_identifier }}"
 nifi_data_path: "{{ nifi_base_path }}/data"
 nifi_scripts_path: "{{ nifi_base_path }}/scripts"
+nifi_certs_path: "{{ nifi_base_path }}/certs"
 
 # renovate: datasource=docker depName=apache/nifi versioning=semver
 nifi_version: 2.6.0
@@ -26,6 +27,10 @@ nifi_gid: ""
 
 # The hostname at which Apache NiFi is served.
 nifi_hostname: ""
+
+# The passphrase with which to use to generate a PKCS12 self-signed certificate
+# which is used to serve Apache NiFi via HTTPS internally
+nifi_pkcs12_passphrase: ""
 
 # The path at which Apache NiFi is exposed.
 # This value must either be `/` or not end with a slash (e.g. `/nifi`).

@@ -16,6 +16,7 @@
     - "{{ nifi_base_path }}"
     - "{{ nifi_data_path }}"
     - "{{ nifi_scripts_path }}"
+    - "{{ nifi_certs_path }}"
     - "{{ nifi_data_path }}/database_repository"
     - "{{ nifi_data_path }}/flowfile_repository"
     - "{{ nifi_data_path }}/content_repository"
@@ -115,6 +116,26 @@
     - secure.sh
     - start.sh
     - update_oidc_properties.sh
+
+- name: Generate private key
+  community.crypto.openssl_privatekey:
+    path: "{{ nifi_certs_path }}/private.key"
+
+- name: Generate self-signed certificate
+  community.crypto.x509_certificate:
+    path: "{{ nifi_certs_path }}/certificate.crt"
+    privatekey_path: "{{ nifi_certs_path }}/private.key"
+    provider: selfsigned
+
+- name: Create PKCS12 keystore
+  community.crypto.openssl_pkcs12:
+    action: export
+    path: "{{ nifi_certs_path }}/keystore.p12"
+    friendly_name: "nifi"
+    privatekey_path: "{{ nifi_certs_path }}/private.key"
+    certificate_path: "{{ nifi_certs_path }}/certificate.crt"
+    passphrase: "{{ nifi_pkcs12_passphrase }}"
+    mode: '0600'
 
 - name: Run if self-building of Apache NiFi container image is not enabled
   when: "not nifi_container_image_self_build | bool"
