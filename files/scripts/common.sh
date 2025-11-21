@@ -14,12 +14,6 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-uncomment() {
-  target_file=${2}
-  echo "File [${target_file}] uncommenting [${1}]"
-  sed -i -e "s|^\#$1|$1|" ${target_file}
-}
-
 # NIFI_HOME is defined by an ENV command in the backing Dockerfile
 export nifi_bootstrap_file=${NIFI_HOME}/conf/bootstrap.conf
 export nifi_props_file=${NIFI_HOME}/conf/nifi.properties

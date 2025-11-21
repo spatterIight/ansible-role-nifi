@@ -120,22 +120,66 @@
 - name: Generate private key
   community.crypto.openssl_privatekey:
     path: "{{ nifi_certs_path }}/private.key"
+    owner: "{{ nifi_uid }}"
+    group: "{{ nifi_gid }}"
+    mode: "0600"
 
-- name: Generate self-signed certificate
+- name: Generate CSR
+  community.crypto.openssl_csr:
+    path: "{{ nifi_certs_path }}/certificate.csr"
+    privatekey_path: "{{ nifi_certs_path }}/private.key"
+    common_name: "common_name"
+    organization_name: "organization_name"
+    country_name: "CZ" # Christmas island
+    owner: "{{ nifi_uid }}"
+    group: "{{ nifi_gid }}"
+    mode: "0644"
+
+- name: Generate self-signed CA certificate
   community.crypto.x509_certificate:
-    path: "{{ nifi_certs_path }}/certificate.crt"
+    path: "{{ nifi_certs_path }}/ca-cert.pem"
     privatekey_path: "{{ nifi_certs_path }}/private.key"
+    csr_path: "{{ nifi_certs_path }}/certificate.csr"
     provider: selfsigned
+    owner: "{{ nifi_uid }}"
+    group: "{{ nifi_gid }}"
+    mode: "0644"
 
-- name: Create PKCS12 keystore
-  community.crypto.openssl_pkcs12:
-    action: export
-    path: "{{ nifi_certs_path }}/keystore.p12"
-    friendly_name: "nifi"
+- name: Generate server certificate signed by CA
+  community.crypto.x509_certificate:
+    path: "{{ nifi_certs_path }}/nifi-cert.pem"
     privatekey_path: "{{ nifi_certs_path }}/private.key"
-    certificate_path: "{{ nifi_certs_path }}/certificate.crt"
-    passphrase: "{{ nifi_pkcs12_passphrase }}"
-    mode: '0600'
+    csr_path: "{{ nifi_certs_path }}/certificate.csr"
+    provider: ownca
+    ownca_path: "{{ nifi_certs_path }}/ca-cert.pem"
+    ownca_privatekey_path: "{{ nifi_certs_path }}/private.key"
+    mode: "0644"
+
+- name: Create JKS keystore with certificate and private key
+  community.general.java_keystore:
+    name: nifi-key
+    certificate_path: "{{ nifi_certs_path }}/nifi-cert.pem"
+    private_key_path: "{{ nifi_certs_path }}/private.key"
+    password: "{{ nifi_self_signed_cert_passphrase }}"
+    dest: "{{ nifi_certs_path }}/keystore.jks"
+    keystore_type: jks
+    owner: "{{ nifi_uid }}"
+    group: "{{ nifi_gid }}"
+    mode: "0600"
+
+- name: Import CA certificate into JKS truststore
+  community.general.java_cert:
+    cert_path: "{{ nifi_certs_path }}/ca-cert.pem"
+    cert_alias: nifi-ca
+    keystore_path: "{{ nifi_certs_path }}/truststore.jks"
+    keystore_pass: "{{ nifi_self_signed_cert_passphrase }}"
+    keystore_type: JKS
+    keystore_create: true
+    trust_cacert: true
+    state: present
+    owner: "{{ nifi_uid }}"
+    group: "{{ nifi_gid }}"
+    mode: "0600"
 
 - name: Run if self-building of Apache NiFi container image is not enabled
   when: "not nifi_container_image_self_build | bool"

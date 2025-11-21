@@ -28,9 +28,9 @@ nifi_gid: ""
 # The hostname at which Apache NiFi is served.
 nifi_hostname: ""
 
-# The passphrase with which to use to generate a PKCS12 self-signed certificate
+# The passphrase with which to use to generate a self-signed certificate
 # which is used to serve Apache NiFi via HTTPS internally
-nifi_pkcs12_passphrase: ""
+nifi_self_signed_cert_passphrase: ""
 
 # The path at which Apache NiFi is exposed.
 # This value must either be `/` or not end with a slash (e.g. `/nifi`).

@@ -19,42 +19,8 @@ scripts_dir='/opt/nifi/scripts'
 
 [ -f "${scripts_dir}/common.sh" ] && . "${scripts_dir}/common.sh"
 
-# Override JVM memory settings
-if [ ! -z "${NIFI_JVM_HEAP_INIT}" ]; then
-    :
-fi
-
-if [ ! -z "${NIFI_JVM_HEAP_MAX}" ]; then
-    :
-fi
-
-if [ ! -z "${NIFI_JVM_DEBUGGER}" ]; then
-    uncomment "java.arg.debug" ${nifi_bootstrap_file}
-fi
-
-# Setup NiFi to use Python
-uncomment "nifi.python.command" ${nifi_props_file}
-
 # Set nifi-toolkit properties files and baseUrl
 "${scripts_dir}/toolkit.sh"
-
-if [ -z "${NIFI_WEB_PROXY_HOST}" ]; then
-    echo 'NIFI_WEB_PROXY_HOST was not set but NiFi is configured to run in a secure mode. The NiFi UI may be inaccessible if using port mapping or connecting through a proxy.'
-fi
-
-# Add NAR provider properties
-# nifi-registry NAR provider
-if [ -n "${NIFI_NAR_LIBRARY_PROVIDER_NIFI_REGISTRY_URL}" ]; then
-    :
-fi
-
-if [ -n "${NIFI_SENSITIVE_PROPS_KEY}" ]; then
-    :
-fi
-
-if [ -n "${SINGLE_USER_CREDENTIALS_USERNAME}" ] && [ -n "${SINGLE_USER_CREDENTIALS_PASSWORD}" ]; then
-    ${NIFI_HOME}/bin/nifi.sh set-single-user-credentials "${SINGLE_USER_CREDENTIALS_USERNAME}" "${SINGLE_USER_CREDENTIALS_PASSWORD}"
-fi
 
 . "${scripts_dir}/update_cluster_state_management.sh"
 

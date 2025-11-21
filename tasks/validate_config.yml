@@ -18,7 +18,7 @@
     - nifi_hostname
     - nifi_path_prefix
     - nifi_container_network
-    - nifi_pkcs12_passphrase
+    - nifi_self_signed_cert_passphrase
 
 - name: Run if Traefik is enabled
   when: nifi_container_labels_traefik_enabled | bool
