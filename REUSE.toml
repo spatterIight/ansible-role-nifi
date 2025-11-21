@@ -14,7 +14,8 @@ path = [
     ".pre-commit-config.yaml",
     ".yamllint.yml",
     "meta/main.yml",
-    "files/*"
+    "files/scripts/*",
+    "files/conf/*",
 ]
 SPDX-FileCopyrightText = "NONE"
 SPDX-License-Identifier = "CC0-1.0"

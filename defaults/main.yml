@@ -196,7 +196,7 @@ nifi_systemd_wanted_services_list_custom: []
 # nifi_environment_variables_additional_variables contains a multiline string with additional environment variables to pass to the container.
 #
 # **It is recommended that you do NOT add any NiFi environment variables,
-# due to technical limitations they will cause tasks to be marked as changed when they arent,
+# due to technical limitations they will cause tasks to be marked as changed when they aren't,
 # since environment variables trigger write operations to the configuration files which causes conflicts with Ansible**
 #
 # Example:
