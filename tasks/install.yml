@@ -128,7 +128,7 @@
   community.crypto.openssl_csr:
     path: "{{ nifi_certs_path }}/certificate.csr"
     privatekey_path: "{{ nifi_certs_path }}/private.key"
-    common_name: "common_name"
+    common_name: "{{ nifi_hostname }}"
     organization_name: "organization_name"
     country_name: "CZ" # Christmas island
     owner: "{{ nifi_uid }}"
