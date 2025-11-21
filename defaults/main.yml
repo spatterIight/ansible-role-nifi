@@ -28,9 +28,13 @@ nifi_gid: ""
 # The hostname at which Apache NiFi is served.
 nifi_hostname: ""
 
-# The passphrase with which to use to generate a self-signed certificate
+# A passphrase used to generate a self-signed certificate
 # which is used to serve Apache NiFi via HTTPS internally
 nifi_self_signed_cert_passphrase: ""
+
+# A passphrase used to encrypt sensitive values inputted into NiFi
+# Generate one using `pwgen -s 64 1`, or some other way
+nifi_sensitive_props_key: ""
 
 # The path at which Apache NiFi is exposed.
 # This value must either be `/` or not end with a slash (e.g. `/nifi`).
@@ -243,17 +247,88 @@ nifi_conf_login_identity_providers_xml: []
 #     value: /state/local
 nifi_conf_state_management_xml: []
 
-# nifi_conf_nifi_properties contains a list of dictionaries of key value pairs
+# The final `nifi.properties` configuration
+# in which keys defined in `nifi_conf_nifi_properties_custom`
+# override ones from `nifi_conf_nifi_properties_default`
+nifi_conf_nifi_properties: >-
+  {{
+    nifi_conf_nifi_properties_default
+    | rejectattr('key', 'in', nifi_conf_nifi_properties_custom | map(attribute='key') | list)
+    | list
+    + nifi_conf_nifi_properties_custom
+  }}
+
+# nifi_conf_nifi_properties_custom contains a list of dictionaries of default key value pairs
 # This can be used to add, modify, or remove any property from the default 'nifi.properties` stored in files/
 #
 # Example:
-# nifi_conf_nifi_properties:
-#   - key: nifi.flow.configuration.archive.dir
-#     value: ./conf/archive/
-#   - key: nifi.nar.library.directory.custom
-#     value: ./conf/custom_nars
-#     state: absent
-nifi_conf_nifi_properties: []
+# nifi_conf_nifi_properties_custom:
+#   - key: nifi.performance.tracking.percentage
+#     value: 50
+nifi_conf_nifi_properties_custom: []
+
+# nifi_conf_nifi_properties_default contains a list of dictionaries of default key value pairs
+# This can be used to add, modify, or remove any property from the default 'nifi.properties` stored in files/
+#
+# To perform additional modifications to `nifi.properties` you should probably use `nifi_conf_nifi_properties_custom`
+nifi_conf_nifi_properties_default:
+  - key: nifi.sensitive.props.key
+    value: "{{ nifi_sensitive_props_key }}"
+
+  - key: \#nifi.python.command
+    value: python3
+    state: absent
+
+  - key: nifi.python.command
+    value: python3
+
+  - key: nifi.python.extensions.source.directory.default
+    value: /opt/nifi/nifi-current/python_extensions
+
+  - key: nifi.nar.library.autoload.directory
+    value: /opt/nifi/nifi-current/nar_extensions
+
+  - key: nifi.remote.input.socket.port
+    value: 10000
+
+  - key: nifi.web.https.host
+    value: 0.0.0.0
+
+  - key: nifi.web.proxy.context.path
+    value: /
+
+  - key: nifi.web.proxy.host
+    value: "{{ nifi_hostname }}:443, {{ nifi_hostname }}:80"
+
+  - key: nifi.cluster.protocol.is.secure
+    value: true
+
+  - key: nifi.security.keystoreType
+    value: jks
+
+  - key: nifi.security.keystore
+    value: /opt/nifi/nifi-current/certs/keystore.jks
+
+  - key: nifi.security.keystore.certificate
+    value: /opt/nifi/nifi-current/certs/certificate.crt
+
+  - key: nifi.security.keystore.privateKey
+    value: /opt/nifi/nifi-current/certs/private.key
+
+  - key: nifi.security.keystorePasswd
+    value: "{{ nifi_self_signed_cert_passphrase }}"
+
+  - key: nifi.security.keyPasswd
+    value: "{{ nifi_self_signed_cert_passphrase }}"
+
+  - key: nifi.security.truststoreType
+    value: jks
+
+  - key: nifi.security.truststore
+    value: /opt/nifi/nifi-current/certs/truststore.jks
+
+  - key: nifi.security.truststorePasswd
+    value: "{{ nifi_self_signed_cert_passphrase }}"
 
 # nifi_conf_zookeeper_properties contains a list of dictionaries of key value pairs
 # This can be used to add, modify, or remove any property from the default 'nifi.properties` stored in files/
