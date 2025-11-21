@@ -50,6 +50,8 @@ To enable Apache NiFi with this role, add the following configuration to your `v
 
 nifi_enabled: true
 
+nifi_hostname: nifi.example.com
+
 # A passphrase used to generate a self-signed certificate
 # which is used to serve Apache NiFi via HTTPS internally
 # Generate one using `pwgen -s 64 1`, or some other way
@@ -74,18 +76,6 @@ nifi_conf_login_identity_providers_xml:
 #                                                                      #
 ########################################################################
 ```
-
-### Set the hostname
-
-To enable Apache NiFi you need to set the hostname as well. To do so, add the following configuration to your `vars.yml` file. Make sure to replace `example.com` with your own value.
-
-```yaml
-nifi_hostname: "example.com"
-```
-
-After adjusting the hostname, make sure to adjust your DNS records to point the domain to your server.
-
-**Note**: hosting Apache NiFi under a subpath (by configuring the `nifi_path_prefix` variable) does not seem to be possible due to Apache NiFi's technical limitations.
 
 ### Adjusting the Traefik configuration
 
