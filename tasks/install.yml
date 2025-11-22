@@ -114,9 +114,7 @@
     group: "{{ nifi_gid }}"
   with_items:
     - common.sh
-    - secure.sh
     - start.sh
-    - update_oidc_properties.sh
 
 - name: Generate private key
   community.crypto.openssl_privatekey:
