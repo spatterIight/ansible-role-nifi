@@ -214,7 +214,7 @@ nifi_systemd_wanted_services_list_custom: []
 nifi_environment_variables_additional_variables: ""
 
 # nifi_conf_authorizers_xml contains a list of dictionaries of XPath expressions
-# This can be used to add, modify, or remove any property from the default 'state-management.xml` stored in files/
+# This can be used to add, modify, or remove any property from the default 'authorizers.xml` stored in files/
 #
 # Example:
 # nifi_conf_authorizers_xml:
@@ -225,7 +225,7 @@ nifi_environment_variables_additional_variables: ""
 nifi_conf_authorizers_xml: []
 
 # nifi_conf_logback_xml contains a list of dictionaries of XPath expressions
-# This can be used to add, modify, or remove any property from the default 'state-management.xml` stored in files/
+# This can be used to add, modify, or remove any property from the default 'logback.xml` stored in files/
 #
 # Example:
 # nifi_conf_logback_xml:
@@ -236,7 +236,7 @@ nifi_conf_authorizers_xml: []
 nifi_conf_logback_xml: []
 
 # nifi_conf_login_identity_providers_xml contains a list of dictionaries of XPath expressions
-# This can be used to add, modify, or remove any property from the default 'state-management.xml` stored in files/
+# This can be used to add, modify, or remove any property from the default 'login-identity-providers.xml` stored in files/
 #
 # Example:
 # nifi_conf_login_identity_providers_xml:
@@ -339,7 +339,7 @@ nifi_conf_nifi_properties_default:
     value: "{{ nifi_self_signed_cert_passphrase }}"
 
 # nifi_conf_zookeeper_properties contains a list of dictionaries of key value pairs
-# This can be used to add, modify, or remove any property from the default 'nifi.properties` stored in files/
+# This can be used to add, modify, or remove any property from the default 'zookeeper.properties` stored in files/
 #
 # Example:
 # nifi_conf_zookeeper_properties:
@@ -348,7 +348,7 @@ nifi_conf_nifi_properties_default:
 nifi_conf_zookeeper_properties: []
 
 # nifi_conf_bootstrap_conf contains a list of dictionaries of key value pairs
-# This can be used to add, modify, or remove any property from the default 'nifi.properties` stored in files/
+# This can be used to add, modify, or remove any property from the default 'bootstrap.conf` stored in files/
 #
 # Example:
 # nifi_conf_bootstrap_conf:
