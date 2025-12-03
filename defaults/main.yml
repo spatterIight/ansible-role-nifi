@@ -43,6 +43,14 @@ nifi_sensitive_props_key: ""
 # technical limitations.
 nifi_path_prefix: /
 
+# Controls whether Ansible logs the following tasks:
+# 1. "Ensure Apache NiFi properties configuration files have the defined adjustments"
+#
+# By default this is set to true such that passwords are not printed to the log
+# However, this also obscures errors if the task fails for some reason, to log the error
+# you can temporarily set this variable to false via the `-e nifi_no_log=false` command line argument
+nifi_no_log: true
+
 nifi_container_image: "{{ nifi_container_image_registry_prefix }}apache/nifi:{{ nifi_container_image_tag }}"
 nifi_container_image_tag: "{{ nifi_version }}"
 nifi_container_image_registry_prefix: "{{ nifi_container_image_registry_prefix_upstream }}"

@@ -65,6 +65,7 @@
     - parameters
 
 - name: Ensure Apache NiFi properties configuration files have the defined adjustments
+  no_log: "{{ nifi_no_log }}"
   ansible.builtin.lineinfile:
     path: "{{ nifi_tempdir.path }}/{{ item.0.file }}"
     line: "{{ item.1.key }}={{ item.1.value }}"
