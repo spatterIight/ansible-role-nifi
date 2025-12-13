@@ -58,10 +58,10 @@
     pretty_print: "{{ item.1.pretty_print | default(true) }}"
   changed_when: false
   with_subelements:
-    - - { "file": "authorizers.xml", "parameters": "{{ nifi_conf_authorizers_xml }}" }
-      - { "file": "logback.xml", "parameters": "{{ nifi_conf_logback_xml }}" }
-      - { "file": "login-identity-providers.xml", "parameters": "{{ nifi_conf_login_identity_providers_xml }}" }
-      - { "file": "state-management.xml", "parameters": "{{ nifi_conf_state_management_xml }}" }
+    - - { "file": "authorizers.xml", "parameters": "{{ nifi_authorizers_xml_replacements }}" }
+      - { "file": "logback.xml", "parameters": "{{ nifi_logback_xml_replacements }}" }
+      - { "file": "login-identity-providers.xml", "parameters": "{{ nifi_login_identity_providers_xml_replacements }}" }
+      - { "file": "state-management.xml", "parameters": "{{ nifi_state_management_xml_replacements }}" }
     - parameters
 
 - name: Ensure Apache NiFi properties configuration files have the defined adjustments
@@ -73,9 +73,9 @@
     state: "{{ item.1.state | default('present') }}"
   changed_when: false
   with_subelements:
-    - - { "file": "nifi.properties", "parameters": "{{ nifi_conf_nifi_properties }}" }
-      - { "file": "zookeeper.properties", "parameters": "{{ nifi_conf_zookeeper_properties }}" }
-      - { "file": "bootstrap.conf", "parameters": "{{ nifi_conf_bootstrap_conf }}" }
+    - - { "file": "nifi.properties", "parameters": "{{ nifi_properties_replacements }}" }
+      - { "file": "zookeeper.properties", "parameters": "{{ nifi_zookeeper_properties_replacements }}" }
+      - { "file": "bootstrap.conf", "parameters": "{{ nifi_bootstrap_conf_replacements }}" }
     - parameters
 
 - name: Ensure Apache NiFi adjusted configuration files installed
@@ -117,81 +117,69 @@
     - common.sh
     - start.sh
 
-- name: Create a keytool container
-  community.docker.docker_container:
-    name: keytool
-    image: spatterlight/ansible-keytool-container:v1.0.0
-    command: ["sleep", "infinity"]
-    state: started
-    volumes:
-      - "{{ nifi_certs_path }}:/{{ nifi_certs_path }}"
+- name: Generate private key
+  community.crypto.openssl_privatekey:
+    path: "{{ nifi_certs_path }}/private.key"
+    owner: "{{ nifi_uid }}"
+    group: "{{ nifi_gid }}"
+    mode: "0600"
 
-- block:
-  - name: Generate private key
-    community.crypto.openssl_privatekey:
-      path: "{{ nifi_certs_path }}/private.key"
-      owner: "{{ nifi_uid }}"
-      group: "{{ nifi_gid }}"
-      mode: "0600"
+- name: Generate CSR
+  community.crypto.openssl_csr:
+    path: "{{ nifi_certs_path }}/certificate.csr"
+    privatekey_path: "{{ nifi_certs_path }}/private.key"
+    common_name: "{{ nifi_hostname }}"
+    organization_name: "organization_name"
+    country_name: "CZ" # Christmas island
+    owner: "{{ nifi_uid }}"
+    group: "{{ nifi_gid }}"
+    mode: "0644"
 
-  - name: Generate CSR
-    community.crypto.openssl_csr:
-      path: "{{ nifi_certs_path }}/certificate.csr"
-      privatekey_path: "{{ nifi_certs_path }}/private.key"
-      common_name: "{{ nifi_hostname }}"
-      organization_name: "organization_name"
-      country_name: "CX" # Christmas island
-      owner: "{{ nifi_uid }}"
-      group: "{{ nifi_gid }}"
-      mode: "0644"
+- name: Generate self-signed CA certificate
+  community.crypto.x509_certificate:
+    path: "{{ nifi_certs_path }}/ca-cert.pem"
+    privatekey_path: "{{ nifi_certs_path }}/private.key"
+    csr_path: "{{ nifi_certs_path }}/certificate.csr"
+    provider: selfsigned
+    owner: "{{ nifi_uid }}"
+    group: "{{ nifi_gid }}"
+    mode: "0644"
 
-  - name: Generate self-signed CA certificate
-    community.crypto.x509_certificate:
-      path: "{{ nifi_certs_path }}/ca-cert.pem"
-      privatekey_path: "{{ nifi_certs_path }}/private.key"
-      csr_path: "{{ nifi_certs_path }}/certificate.csr"
-      provider: selfsigned
-      owner: "{{ nifi_uid }}"
-      group: "{{ nifi_gid }}"
-      mode: "0644"
+- name: Generate server certificate signed by CA
+  community.crypto.x509_certificate:
+    path: "{{ nifi_certs_path }}/nifi-cert.pem"
+    privatekey_path: "{{ nifi_certs_path }}/private.key"
+    csr_path: "{{ nifi_certs_path }}/certificate.csr"
+    provider: ownca
+    ownca_path: "{{ nifi_certs_path }}/ca-cert.pem"
+    ownca_privatekey_path: "{{ nifi_certs_path }}/private.key"
+    mode: "0644"
 
-  - name: Generate server certificate signed by CA
-    community.crypto.x509_certificate:
-      path: "{{ nifi_certs_path }}/nifi-cert.pem"
-      privatekey_path: "{{ nifi_certs_path }}/private.key"
-      csr_path: "{{ nifi_certs_path }}/certificate.csr"
-      provider: ownca
-      ownca_path: "{{ nifi_certs_path }}/ca-cert.pem"
-      ownca_privatekey_path: "{{ nifi_certs_path }}/private.key"
-      mode: "0644"
+- name: Create JKS keystore with certificate and private key
+  community.general.java_keystore:
+    name: nifi-key
+    certificate_path: "{{ nifi_certs_path }}/nifi-cert.pem"
+    private_key_path: "{{ nifi_certs_path }}/private.key"
+    password: "{{ nifi_self_signed_cert_passphrase }}"
+    dest: "{{ nifi_certs_path }}/keystore.jks"
+    keystore_type: jks
+    owner: "{{ nifi_uid }}"
+    group: "{{ nifi_gid }}"
+    mode: "0600"
 
-  - name: Create JKS keystore with certificate and private key
-    community.general.java_keystore:
-      name: nifi-key
-      certificate_path: "{{ nifi_certs_path }}/nifi-cert.pem"
-      private_key_path: "{{ nifi_certs_path }}/private.key"
-      password: "{{ nifi_self_signed_cert_passphrase }}"
-      dest: "{{ nifi_certs_path }}/keystore.jks"
-      keystore_type: jks
-      owner: "{{ nifi_uid }}"
-      group: "{{ nifi_gid }}"
-      mode: "0600"
-
-  - name: Import CA certificate into JKS truststore
-    community.general.java_cert:
-      cert_path: "{{ nifi_certs_path }}/ca-cert.pem"
-      cert_alias: nifi-ca
-      keystore_path: "{{ nifi_certs_path }}/truststore.jks"
-      keystore_pass: "{{ nifi_self_signed_cert_passphrase }}"
-      keystore_type: JKS
-      keystore_create: true
-      trust_cacert: true
-      state: present
-      owner: "{{ nifi_uid }}"
-      group: "{{ nifi_gid }}"
-      mode: "0600"
-  delegate_to: keytool
-  connection: community.docker.docker_api
+- name: Import CA certificate into JKS truststore
+  community.general.java_cert:
+    cert_path: "{{ nifi_certs_path }}/ca-cert.pem"
+    cert_alias: nifi-ca
+    keystore_path: "{{ nifi_certs_path }}/truststore.jks"
+    keystore_pass: "{{ nifi_self_signed_cert_passphrase }}"
+    keystore_type: JKS
+    keystore_create: true
+    trust_cacert: true
+    state: present
+    owner: "{{ nifi_uid }}"
+    group: "{{ nifi_gid }}"
+    mode: "0600"
 
 - name: Run if self-building of Apache NiFi container image is not enabled
   when: "not nifi_container_image_self_build | bool"

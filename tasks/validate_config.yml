@@ -20,6 +20,7 @@
     - nifi_container_network
     - nifi_self_signed_cert_passphrase
     - nifi_sensitive_props_key
+    - nifi_login_password
 
 - name: Run if Traefik is enabled
   when: nifi_container_labels_traefik_enabled | bool
