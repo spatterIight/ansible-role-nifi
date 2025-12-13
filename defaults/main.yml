@@ -36,6 +36,15 @@ nifi_self_signed_cert_passphrase: ""
 # Generate one using `pwgen -s 64 1`, or some other way
 nifi_sensitive_props_key: ""
 
+# The default login credentials to configure
+# The password must be at least 12 characters, generate one using `pwgen -s 32 1`, or some other way
+# The salt must be exactly 22 characters, and does not necessarily need to be changed from default value
+#
+# These variables are used by the `nifi_login_identity_providers_xml_replacements_default` variable
+nifi_login_username: admin
+nifi_login_password: ""
+nifi_login_salt: 0tfETQ5kFWhcT4oPwdbHbL
+
 # The path at which Apache NiFi is exposed.
 # This value must either be `/` or not end with a slash (e.g. `/nifi`).
 #
@@ -128,7 +137,8 @@ nifi_container_labels_traefik_additional_response_headers_custom: {}
 
 # Controls which `serversTransports` Traefik uses to route traffic to the NiFi backend
 # Useful for setting a custom serversTransports which disables HTTPS certificate verification on the backend
-nifi_container_labels_traefik_serverstransport: insecure-nifi-transport@file
+nifi_traefik_serverstransport: insecure-nifi-transport
+nifi_container_labels_traefik_serverstransport: "{{ nifi_traefik_serverstransport }}@file"
 
 # nifi_container_labels_additional_labels contains a multiline string with additional labels to add to the container label file.
 # See `../templates/labels.j2` for details.
@@ -213,73 +223,68 @@ nifi_systemd_wanted_services_list_custom: []
 #   ANOTHER=value
 nifi_environment_variables_additional_variables: ""
 
-# nifi_conf_authorizers_xml contains a list of dictionaries of XPath expressions
-# This can be used to add, modify, or remove any property from the default 'authorizers.xml` stored in files/
+# nifi_authorizers_xml_replacements contains a list of dictionaries of XPath expressions
+# This can be used to add, modify, or remove any property from the default 'authorizers.xml` stored in files/conf/
 #
 # Example:
-# nifi_conf_authorizers_xml:
+# nifi_authorizers_xml_replacements:
 #   - xpath: /authorizers/authorizer/identifier
 #     value: single-user-authorizer
 #   - xpath: /authorizers/authorizer/class
 #     value: org.apache.nifi.authorization.single.user.SingleUserAuthorizer
-nifi_conf_authorizers_xml: []
+nifi_authorizers_xml_replacements: []
 
-# nifi_conf_logback_xml contains a list of dictionaries of XPath expressions
-# This can be used to add, modify, or remove any property from the default 'logback.xml` stored in files/
+# nifi_logback_xml_replacements contains a list of dictionaries of XPath expressions
+# This can be used to add, modify, or remove any property from the default 'logback.xml` stored in files/conf/
 #
 # Example:
-# nifi_conf_logback_xml:
+# nifi_logback_xml_replacements:
 #   - xpath: /configuration/appender[@name="APP_FILE"]/rollingPolicy/maxFileSize
 #     value: 100MB
 #   - xpath: /configuration/appender[@name="APP_FILE"]/rollingPolicy/maxHistory
 #     value: 30
-nifi_conf_logback_xml: []
+nifi_logback_xml_replacements: []
 
-# nifi_conf_login_identity_providers_xml contains a list of dictionaries of XPath expressions
-# This can be used to add, modify, or remove any property from the default 'login-identity-providers.xml` stored in files/
+# nifi_login_identity_providers_xml_replacements_custom contains a list of dictionaries of XPath expressions
+# This can be used to add, modify, or remove any property from the default 'login-identity-providers.xml` stored in files/conf/
+#
+# See `nifi_login_identity_providers_xml_replacements_default` for an example of what can be defined here
+nifi_login_identity_providers_xml_replacements_custom: []
+
+# The default 'login-identity-providers.xml` replacements to make
+nifi_login_identity_providers_xml_replacements_default:
+  - xpath: /loginIdentityProviders/provider/property[@name='Username']
+    value: "{{ nifi_login_username }}"
+
+  - xpath: /loginIdentityProviders/provider/property[@name='Password']
+    value: "{{ nifi_login_password | password_hash(hashtype='bcrypt', salt=nifi_login_salt) }}"
+
+# The final 'login-identity-providers.xml` replacements to make
+nifi_login_identity_providers_xml_replacements: "{{ nifi_login_identity_providers_xml_replacements_default + nifi_login_identity_providers_xml_replacements_custom }}"
+
+# nifi_state_management_xml_replacements contains a list of dictionaries of XPath expressions
+# This can be used to add, modify, or remove any property from the default 'state-management.xml` stored in files/conf/
 #
 # Example:
-# nifi_conf_login_identity_providers_xml:
-#   - xpath: /loginIdentityProviders/provider/identifier
-#     value: single-user-provider
-#   - xpath: /loginIdentityProviders/provider/class
-#     value: org.apache.nifi.authentication.single.user.SingleUserLoginIdentityProvider
-nifi_conf_login_identity_providers_xml: []
-
-# nifi_conf_state_management_xml contains a list of dictionaries of XPath expressions
-# This can be used to add, modify, or remove any property from the default 'state-management.xml` stored in files/
-#
-# Example:
-# nifi_conf_state_management_xml:
+# nifi_state_management_xml_replacements:
 #   - xpath: /stateManagement/local-provider/property[@name="Directory"]
 #     value: /state/local
-nifi_conf_state_management_xml: []
+nifi_state_management_xml_replacements: []
 
-# The final `nifi.properties` configuration
-# in which keys defined in `nifi_conf_nifi_properties_custom`
-# override ones from `nifi_conf_nifi_properties_default`
-nifi_conf_nifi_properties: >-
-  {{
-    nifi_conf_nifi_properties_default
-    | rejectattr('key', 'in', nifi_conf_nifi_properties_custom | map(attribute='key') | list)
-    | list
-    + nifi_conf_nifi_properties_custom
-  }}
-
-# nifi_conf_nifi_properties_custom contains a list of dictionaries of default key value pairs
-# This can be used to add, modify, or remove any property from the default 'nifi.properties` stored in files/
+# nifi_properties_replacements_custom contains a list of dictionaries of default key value pairs
+# This can be used to add, modify, or remove any property from the default 'nifi.properties` stored in files/conf/
 #
 # Example:
-# nifi_conf_nifi_properties_custom:
+# nifi_properties_replacements_custom:
 #   - key: nifi.performance.tracking.percentage
 #     value: 50
-nifi_conf_nifi_properties_custom: []
+nifi_properties_replacements_custom: []
 
 # nifi_conf_nifi_properties_default contains a list of dictionaries of default key value pairs
-# This can be used to add, modify, or remove any property from the default 'nifi.properties` stored in files/
+# This can be used to add, modify, or remove any property from the default 'nifi.properties` stored in files/conf/
 #
-# To perform additional modifications to `nifi.properties` you should probably use `nifi_conf_nifi_properties_custom`
-nifi_conf_nifi_properties_default:
+# To perform additional modifications to `nifi.properties` you should probably use `nifi_properties_replacements_custom`
+nifi_properties_replacements_default:
   - key: nifi.sensitive.props.key
     value: "{{ nifi_sensitive_props_key }}"
 
@@ -338,22 +343,32 @@ nifi_conf_nifi_properties_default:
   - key: nifi.security.truststorePasswd
     value: "{{ nifi_self_signed_cert_passphrase }}"
 
-# nifi_conf_zookeeper_properties contains a list of dictionaries of key value pairs
-# This can be used to add, modify, or remove any property from the default 'zookeeper.properties` stored in files/
+# The final `nifi.properties` configuration
+# Keys defined in `nifi_properties_replacements_custom` override ones from `nifi_properties_replacements_default`
+nifi_properties_replacements: >-
+  {{
+    nifi_properties_replacements_default
+    | rejectattr('key', 'in', nifi_properties_replacements_custom | map(attribute='key') | list)
+    | list
+    + nifi_properties_replacements_custom
+  }}
+
+# nifi_zookeeper_properties_replacements contains a list of dictionaries of key value pairs
+# This can be used to add, modify, or remove any property from the default 'zookeeper.properties` stored in files/conf/
 #
 # Example:
-# nifi_conf_zookeeper_properties:
+# nifi_zookeeper_properties_replacements:
 #   - key: dataDir
 #     value: ./state/zookeeper
-nifi_conf_zookeeper_properties: []
+nifi_zookeeper_properties_replacements: []
 
-# nifi_conf_bootstrap_conf contains a list of dictionaries of key value pairs
-# This can be used to add, modify, or remove any property from the default 'bootstrap.conf` stored in files/
+# nifi_bootstrap_conf_replacements contains a list of dictionaries of key value pairs
+# This can be used to add, modify, or remove any property from the default 'bootstrap.conf` stored in files/conf/
 #
 # Example:
-# nifi_conf_bootstrap_conf:
+# nifi_bootstrap_conf_replacements:
 #   - key: java.arg.2
 #     value: -Xms512m
 #   - key: java.arg.3
 #     value: -Xmx512m
-nifi_conf_bootstrap_conf: []
+nifi_bootstrap_conf_replacements: []
