@@ -96,9 +96,11 @@ Or, if you are using the [MASH Traefik](https://github.com/mother-of-all-self-ho
 traefik_provider_configuration_extension_yaml: |
   http:
     serversTransports:
-      insecure-nifi-transport:
+      {{ nifi_traefik_serverstransport }}:
         insecureSkipVerify: true
 ```
+
+You can use the `nifi_traefik_serverstransport` variable to reference the name dynamically, or just hard-code the value `insecure-nifi-transport`.
 
 ### Adjusting the Apache NiFi configuration
 
