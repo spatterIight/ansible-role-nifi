@@ -20,7 +20,7 @@ nifi_scripts_path: "{{ nifi_base_path }}/scripts"
 nifi_certs_path: "{{ nifi_base_path }}/certs"
 
 # renovate: datasource=docker depName=apache/nifi versioning=semver
-nifi_version: 2.6.0
+nifi_version: 2.9.0
 
 nifi_uid: ""
 nifi_gid: ""
