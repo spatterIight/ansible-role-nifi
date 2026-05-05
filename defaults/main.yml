@@ -65,7 +65,6 @@ nifi_container_image_tag: "{{ nifi_version }}"
 nifi_container_image_registry_prefix: "{{ nifi_container_image_registry_prefix_upstream }}"
 nifi_container_image_registry_prefix_upstream: "{{ nifi_container_image_registry_prefix_upstream_default }}"
 nifi_container_image_registry_prefix_upstream_default: docker.io/
-nifi_container_image_force_pull: "{{ nifi_container_image.endswith(':latest') }}"
 
 nifi_container_image_self_build: false
 nifi_container_image_self_build_name: "apache/nifi:{{ nifi_container_image_self_build_repo_version }}"
