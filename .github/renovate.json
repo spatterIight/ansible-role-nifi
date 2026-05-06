@@ -9,7 +9,12 @@
   ],
   "packageRules": [
     {
-      "matchFileNames": [".pre-commit-config.yaml"],
+      "matchFileNames": [
+        ".pre-commit-config.yaml",
+        ".github/workflows/autotag.yml",
+        ".github/workflows/pre-commit.yml",
+        "mise.toml"
+      ],
       "enabled": true,
       "automerge": true,
       "automergeType": "branch",
