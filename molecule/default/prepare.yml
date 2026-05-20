@@ -19,6 +19,7 @@
         name:
           - python3-requests
           - python3-lxml
+          - default-jdk-headless
         state: present
 
     - name: Install Docker
