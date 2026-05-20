@@ -28,16 +28,14 @@ provisioner:
   inventory:
     group_vars:
       all:
+        nifi_hostname: localhost
         nifi_uid: 1000
         nifi_gid: 1000
-        nifi_hostname: localhost
-        nifi_path_prefix: /
-        nifi_container_network: nifi
-        nifi_self_signed_cert_passphrase: "MoleculeTestCertPass123!"
-        nifi_sensitive_props_key: "MoleculeTestSensitiveKey123!"
-        nifi_login_password: "MoleculeTestPassword123!"
+        nifi_self_signed_cert_passphrase: MoleculeTestCertPass123!
+        nifi_sensitive_props_key: MoleculeTestSensitiveKey123!
+        nifi_login_password: MoleculeTestPassword123!
         nifi_container_labels_traefik_enabled: false
-        nifi_container_https_host_bind_port: "8443"
+        nifi_container_https_host_bind_port: 8443
   env:
     # This is a hack to resolve https://github.com/ansible/molecule/issues/4391
     ANSIBLE_ROLES_PATH: ${MOLECULE_PROJECT_DIRECTORY}/..:/.ansible/roles:/usr/share/ansible/roles:/etc/ansible/roles:~/.ansible/roles
