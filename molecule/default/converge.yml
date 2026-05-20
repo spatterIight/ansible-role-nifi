@@ -1,0 +1,53 @@
+# SPDX-FileCopyrightText: 2026 spatterlight
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+---
+- name: Include roles
+  hosts: all
+  become: true
+  gather_facts: true
+  tasks:
+    - name: Include roles
+      ansible.builtin.include_role:
+        name: "{{ role_name }}"
+        public: true
+      loop:
+        - com.devture.ansible.role.playbook_help
+        - com.devture.ansible.role.systemd_docker_base
+        - "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"
+      loop_control:
+        loop_var: role_name
+
+- name: Ensure NiFi service is started
+  hosts: all
+  become: true
+  gather_facts: false
+  tasks:
+    # This seems needed due to molecule timing out in Github Actions
+    - name: Set TimeoutStartSec=0 for nifi service
+      changed_when: false # Do not mark as changed to avoid the idempotency failure
+      ansible.builtin.lineinfile:
+        state: present
+        path: "/etc/systemd/system/nifi.service"
+        insertafter: "^Type=simple"
+        line: "TimeoutStartSec=0"
+
+    - name: Reload systemd daemon
+      ansible.builtin.systemd_service:
+        daemon_reload: true
+
+    - name: Start nifi service
+      ansible.builtin.systemd_service:
+        name: nifi.service
+        state: started
+
+    # Set state to absent so
+    # "Ensure Apache NiFi systemd service is present" tasks do not have idempotency failures
+    - name: Remove TimeoutStartSec=0 from nifi service
+      changed_when: false # Do not mark as changed to avoid the idempotency failure
+      ansible.builtin.lineinfile:
+        state: absent
+        path: "/etc/systemd/system/nifi.service"
+        insertafter: "^Type=simple"
+        line: "TimeoutStartSec=0"

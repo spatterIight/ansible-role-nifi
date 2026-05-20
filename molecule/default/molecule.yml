@@ -1,0 +1,45 @@
+# SPDX-FileCopyrightText: 2026 spatterlight
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+---
+dependency:
+  name: galaxy
+  options:
+    requirements-file: requirements.yml
+driver:
+  name: docker
+platforms:
+  - name: nifi-${MOLECULE_DISTRO:-ubuntu2604}-default
+    image: "geerlingguy/docker-${MOLECULE_DISTRO:-ubuntu2604}-ansible:latest"
+    command: ${MOLECULE_DOCKER_COMMAND:-""}
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+    cgroupns_mode: host
+    privileged: true
+    pre_build_image: true
+    published_ports:
+      - 127.0.0.1:8443:8443
+provisioner:
+  name: ansible
+  config_options:
+    defaults:
+      callback_result_format: yaml
+  inventory:
+    group_vars:
+      all:
+        nifi_uid: 1000
+        nifi_gid: 1000
+        nifi_hostname: molecule-nifi-test
+        nifi_path_prefix: /
+        nifi_container_network: nifi
+        nifi_self_signed_cert_passphrase: "MoleculeTestCertPass123!"
+        nifi_sensitive_props_key: "MoleculeTestSensitiveKey123!"
+        nifi_login_password: "MoleculeTestPassword123!"
+        nifi_container_labels_traefik_enabled: false
+        nifi_container_https_host_bind_port: "8443"
+  env:
+    # This is a hack to resolve https://github.com/ansible/molecule/issues/4391
+    ANSIBLE_ROLES_PATH: ${MOLECULE_PROJECT_DIRECTORY}/..:/.ansible/roles:/usr/share/ansible/roles:/etc/ansible/roles:~/.ansible/roles
+verifier:
+  name: ansible
