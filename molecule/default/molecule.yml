@@ -30,7 +30,7 @@ provisioner:
       all:
         nifi_uid: 1000
         nifi_gid: 1000
-        nifi_hostname: molecule-nifi-test
+        nifi_hostname: localhost
         nifi_path_prefix: /
         nifi_container_network: nifi
         nifi_self_signed_cert_passphrase: "MoleculeTestCertPass123!"

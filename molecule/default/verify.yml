@@ -24,21 +24,21 @@
 
     - name: Wait for NiFi HTTPS endpoint to respond (up to 10m)
       ansible.builtin.uri:
-        url: "https://localhost:8443/nifi"
+        url: "https://localhost:8443/nifi/"
         method: GET
         validate_certs: false
-        status_code: [200, 302]
+        status_code: [200]
         follow_redirects: none
       register: nifi_https
-      until: nifi_https.status in [200, 302]
+      until: nifi_https.status == 200
       retries: 120
       delay: 5
 
     - name: Assert NiFi HTTPS endpoint responds
       ansible.builtin.assert:
         that: nifi_https.status in [200, 302]
-        fail_msg: "NiFi HTTPS did not respond ({{ nifi_https.status | default('no response') }})"
-        success_msg: "NiFi HTTPS responded with {{ nifi_https.status }}"
+        fail_msg: "NiFi did not respond with 200 ({{ nifi_https.status | default('no response') }})"
+        success_msg: "NiFi responded with 200"
 
     - name: Show service status summary
       ansible.builtin.debug:
