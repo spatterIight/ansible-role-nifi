@@ -31,7 +31,7 @@ collections:
     version: 13.0.0
 
   - name: community.crypto
-    version: 2.26.1
+    version: 3.2.1
 
   - name: ansible.posix
     version: 2.2.0
