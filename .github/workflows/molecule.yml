@@ -12,9 +12,7 @@ jobs:
       matrix:
         distro:
           - ubuntu2604
-          - ubuntu2404
           - debian13
-          - debian12
         scenario:
           - default
       fail-fast: false

@@ -24,15 +24,6 @@
   become: true
   gather_facts: false
   tasks:
-    # This seems needed due to molecule timing out in Github Actions
-    - name: Set TimeoutStartSec=0 for nifi service
-      changed_when: false # Do not mark as changed to avoid the idempotency failure
-      ansible.builtin.lineinfile:
-        state: present
-        path: "/etc/systemd/system/nifi.service"
-        insertafter: "^Type=simple"
-        line: "TimeoutStartSec=0"
-
     - name: Reload systemd daemon
       ansible.builtin.systemd_service:
         daemon_reload: true
@@ -41,13 +32,3 @@
       ansible.builtin.systemd_service:
         name: nifi.service
         state: started
-
-    # Set state to absent so
-    # "Ensure Apache NiFi systemd service is present" tasks do not have idempotency failures
-    - name: Remove TimeoutStartSec=0 from nifi service
-      changed_when: false # Do not mark as changed to avoid the idempotency failure
-      ansible.builtin.lineinfile:
-        state: absent
-        path: "/etc/systemd/system/nifi.service"
-        insertafter: "^Type=simple"
-        line: "TimeoutStartSec=0"
