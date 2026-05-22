@@ -3,12 +3,12 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 ---
-- name: Verify
+- name: Verify Apache NiFi systemd service
   hosts: all
   become: true
   gather_facts: false
   tasks:
-    - name: Wait for nifi service to become active (up to 180s)
+    - name: Wait for Apache NiFi service to become active (up to 180s)
       ansible.builtin.systemd:
         name: nifi.service
       register: nifi_service
@@ -16,7 +16,7 @@
       retries: 36
       delay: 5
 
-    - name: Assert nifi service is active
+    - name: Assert Apache NiFi service is active
       ansible.builtin.assert:
         that: nifi_service.status.ActiveState == 'active'
         fail_msg: "nifi.service not active ({{ nifi_service.status.ActiveState }})"
@@ -29,19 +29,20 @@
         validate_certs: false
         status_code: [200]
         follow_redirects: none
-      register: nifi_https
-      until: nifi_https.status == 200
+      register: nifi_endpoint_https
+      until: nifi_endpoint_https.status == 200
       retries: 120
       delay: 5
 
-    - name: Assert NiFi HTTPS endpoint responds
+    - name: Assert Apache NiFi HTTPS endpoint responds
       ansible.builtin.assert:
-        that: nifi_https.status in [200, 302]
-        fail_msg: "NiFi did not respond with 200 ({{ nifi_https.status | default('no response') }})"
-        success_msg: "NiFi responded with 200"
+        that: nifi_endpoint_https.status in [200, 302]
+        fail_msg: "Apache NiFi did not respond with 200 ({{ nifi_https.status | default('no response') }})"
+        success_msg: "Apache NiFi responded with 200"
 
-    - name: Show service status summary
+
+    - name: Show Apache NiFi systemd service status summary
       ansible.builtin.debug:
         msg:
-          - "nifi systemd: {{ nifi_service.status.ActiveState }}"
-          - "nifi HTTPS: {{ nifi_https.status }}"
+          - "Apache NiFi systemd: {{ nifi_service.status.ActiveState }}"
+          - "Apache NiFi HTTPS: {{ nifi_endpoint_https.status }}"
