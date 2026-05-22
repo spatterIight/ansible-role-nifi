@@ -40,7 +40,6 @@
         fail_msg: "Apache NiFi did not respond with 200 ({{ nifi_https.status | default('no response') }})"
         success_msg: "Apache NiFi responded with 200"
 
-
     - name: Show Apache NiFi systemd service status summary
       ansible.builtin.debug:
         msg:
