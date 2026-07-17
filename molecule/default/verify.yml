@@ -22,6 +22,12 @@
         fail_msg: "nifi.service not active ({{ nifi_service.status.ActiveState }})"
         success_msg: "nifi.service is active"
 
+    - name: Retrieve Apache NiFi service log for debugging
+      when: nifi_debug_service_enabled | bool
+      ansible.builtin.command:
+        cmd: journalctl -xeu nifi.service
+      changed_when: false
+
     - name: Wait for NiFi HTTPS endpoint to respond (up to 10m)
       ansible.builtin.uri:
         url: "https://localhost:8443/nifi/"

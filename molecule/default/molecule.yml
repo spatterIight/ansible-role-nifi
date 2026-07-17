@@ -28,6 +28,10 @@ provisioner:
   inventory:
     group_vars:
       all:
+        # Helper variables
+        nifi_debug_service_enabled: false
+
+        # Variables for Apache NiFi
         nifi_uid: 1000
         nifi_gid: 1000
         nifi_hostname: localhost
