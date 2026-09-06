@@ -66,6 +66,15 @@ nifi_container_image_registry_prefix: "{{ nifi_container_image_registry_prefix_u
 nifi_container_image_registry_prefix_upstream: "{{ nifi_container_image_registry_prefix_upstream_default }}"
 nifi_container_image_registry_prefix_upstream_default: docker.io/
 
+# Controls whether the container image is built locally instead of being pulled.
+#
+# Do not turn this on: it cannot work as written, and no version of it has ever been tested.
+# - Apache NiFi tags its releases `rel/nifi-<version>`. There is no `v<version>` tag in
+#   https://github.com/apache/nifi, so the `git` task below fails before anything is built.
+# - Even given the right revision, there is no `Dockerfile` at the root of that repository.
+#   The image is defined in `nifi-docker/dockerhub/`, and it does not build Apache NiFi:
+#   it downloads a release archive from archive.apache.org. Building Apache NiFi from
+#   source is a multi-hour Maven build of the whole project.
 nifi_container_image_self_build: false
 nifi_container_image_self_build_name: "apache/nifi:{{ nifi_container_image_self_build_repo_version }}"
 nifi_container_image_self_build_repo: "https://github.com/apache/nifi.git"
@@ -80,7 +89,11 @@ nifi_container_https_host_bind_port: ""
 # The base container network. It will be auto-created by this role if it doesn't exist already.
 nifi_container_network: "{{ nifi_identifier }}"
 
-# The port number in the container
+# The port number that Apache NiFi listens on inside the container.
+#
+# This drives `nifi.web.https.port` in `nifi.properties` (see `nifi_properties_replacements_default`),
+# the container port that `nifi_container_https_host_bind_port` publishes,
+# and the port Traefik sends traffic to (see `../templates/labels.j2`).
 nifi_container_https_port: 8443
 
 # A list of additional container networks that the container would be connected to.
@@ -305,6 +318,9 @@ nifi_properties_replacements_default:
 
   - key: nifi.web.https.host
     value: 0.0.0.0
+
+  - key: nifi.web.https.port
+    value: "{{ nifi_container_https_port }}"
 
   - key: nifi.web.proxy.context.path
     value: /

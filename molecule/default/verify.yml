@@ -1,53 +1,246 @@
+# SPDX-FileCopyrightText: 2026 Slavi Pantaleev
 # SPDX-FileCopyrightText: 2026 spatterlight
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 ---
-- name: Verify Apache NiFi systemd service
+- name: Verify Apache NiFi
   hosts: all
   become: true
   gather_facts: false
+
+  vars:
+    # `nifi_container_https_port` comes from the scenario's group_vars and is deliberately
+    # not Apache NiFi's own default of 8443. See molecule.yml.
+    nifi_base_url: "https://localhost:{{ nifi_container_https_port }}"
+
   tasks:
-    - name: Wait for Apache NiFi service to become active (up to 180s)
-      ansible.builtin.systemd:
+    # The role is not included in this playbook, so its defaults are not in
+    # scope. Reading defaults/main.yml directly ties the version assertion
+    # below.
+    - name: Load the role defaults
+      ansible.builtin.include_vars:
+        file: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/defaults/main.yml"
+        name: nifi_defaults
+
+    - name: Wait for the Apache NiFi systemd service to become active (up to 180s)
+      ansible.builtin.systemd_service:
         name: nifi.service
       register: nifi_service
       until: nifi_service.status.ActiveState == 'active'
       retries: 36
       delay: 5
+      failed_when: false
 
-    - name: Assert Apache NiFi service is active
+    # On its own this proves very little: the unit is `Restart=always`, so a crash-looping
+    # container also reports `active`. The checks below are what actually gate this scenario.
+    - name: Assert that the Apache NiFi systemd service is active
       ansible.builtin.assert:
         that: nifi_service.status.ActiveState == 'active'
-        fail_msg: "nifi.service not active ({{ nifi_service.status.ActiveState }})"
+        fail_msg: "nifi.service is not active ({{ nifi_service.status.ActiveState | default('unknown') }})"
         success_msg: "nifi.service is active"
 
-    - name: Retrieve Apache NiFi service log for debugging
+    - name: Retrieve the Apache NiFi service log for debugging
       when: nifi_debug_service_enabled | bool
       ansible.builtin.command:
         cmd: journalctl -xeu nifi.service
       changed_when: false
 
-    - name: Wait for NiFi HTTPS endpoint to respond (up to 10m)
+    # Apache NiFi is a large JVM application and needs minutes, not seconds, before it accepts
+    # connections. Until then the port is simply closed, so this loop is what separates
+    # "still booting" from "never coming up".
+    - name: Wait for the Apache NiFi web interface to respond (up to 10m)
       ansible.builtin.uri:
-        url: "https://localhost:8443/nifi/"
+        url: "{{ nifi_base_url }}/nifi/"
         method: GET
         validate_certs: false
-        status_code: [200]
         follow_redirects: none
-      register: nifi_endpoint_https
-      until: nifi_endpoint_https.status == 200
+        status_code: [200, 301, 302, 400, 401, 403, 421, 502, 503]
+      register: nifi_web_interface
+      until: nifi_web_interface.status == 200
       retries: 120
       delay: 5
+      failed_when: false
 
-    - name: Assert Apache NiFi HTTPS endpoint responds
+    # Reaching this on `nifi_container_https_port` (9443 in this scenario) is what proves that
+    # the role's `nifi.web.https.port` replacement reached the process: Apache NiFi's own image
+    # ships 8443, and the container only publishes the port the role was told about, so a NiFi
+    # that ignored the role's `nifi.properties` would be listening where nothing is mapped.
+    - name: Assert that the Apache NiFi web interface responds on the configured port
       ansible.builtin.assert:
-        that: nifi_endpoint_https.status in [200, 302]
-        fail_msg: "Apache NiFi did not respond with 200 ({{ nifi_https.status | default('no response') }})"
-        success_msg: "Apache NiFi responded with 200"
+        that: nifi_web_interface.status == 200
+        fail_msg: >-
+          Apache NiFi did not serve its web interface on port {{ nifi_container_https_port }}
+          (got {{ nifi_web_interface.status | default('no response') }})
+        success_msg: "Apache NiFi serves its web interface on port {{ nifi_container_https_port }}"
 
-    - name: Show Apache NiFi systemd service status summary
+    # A negative control for the two checks that follow. If the API were reachable without a
+    # token, "logged in successfully" and "reported this version" would prove nothing at all.
+    - name: Request the Apache NiFi API without a token
+      ansible.builtin.uri:
+        url: "{{ nifi_base_url }}/nifi-api/flow/about"
+        method: GET
+        validate_certs: false
+        status_code: [200, 401, 403]
+      register: nifi_about_anonymous
+      failed_when: false
+
+    - name: Assert that the Apache NiFi API rejects unauthenticated requests
+      ansible.builtin.assert:
+        that: nifi_about_anonymous.status in [401, 403]
+        fail_msg: >-
+          The Apache NiFi API answered an unauthenticated request with
+          {{ nifi_about_anonymous.status | default('no response') }};
+          the authenticated checks below would then be meaningless
+        success_msg: "The Apache NiFi API rejects unauthenticated requests"
+
+    # A second negative control: the credentials check below must be able to fail. An
+    # unconfigured Apache NiFi answers every login attempt this way, with 400 and
+    # "The supplied username and password are not valid."
+    - name: Log in to Apache NiFi with a wrong password
+      ansible.builtin.uri:
+        url: "{{ nifi_base_url }}/nifi-api/access/token"
+        method: POST
+        body_format: form-urlencoded
+        body:
+          username: "{{ nifi_login_username }}"
+          password: "definitely-not-the-configured-password"
+        validate_certs: false
+        status_code: [201, 400, 401, 403]
+      register: nifi_token_wrong
+      failed_when: false
+
+    - name: Assert that Apache NiFi rejects a wrong password
+      ansible.builtin.assert:
+        that: nifi_token_wrong.status != 201
+        fail_msg: >-
+          Apache NiFi issued a token for a wrong password
+          (status {{ nifi_token_wrong.status | default('no response') }});
+          the credentials check below cannot fail and is worthless
+        success_msg: "Apache NiFi rejects a wrong password"
+
+    # The credentials only exist because the role wrote them into
+    # `conf/login-identity-providers.xml`, bcrypt-hashed with `nifi_login_salt`. An Apache NiFi
+    # running on anything other than the role's configuration generates a random UUID username
+    # and a random password instead, and answers this with 400.
+    - name: Log in to Apache NiFi with the configured credentials
+      ansible.builtin.uri:
+        url: "{{ nifi_base_url }}/nifi-api/access/token"
+        method: POST
+        body_format: form-urlencoded
+        body:
+          username: "{{ nifi_login_username }}"
+          password: "{{ nifi_login_password }}"
+        validate_certs: false
+        return_content: true
+        status_code: [201, 400, 401, 403]
+      register: nifi_token
+      failed_when: false
+
+    - name: Assert that the configured Apache NiFi credentials work
+      ansible.builtin.assert:
+        that:
+          - nifi_token.status == 201
+          - (nifi_token.content | default('')) | length > 100
+        fail_msg: >-
+          Apache NiFi did not accept the credentials the role configured
+          (status {{ nifi_token.status | default('no response') }}), so
+          conf/login-identity-providers.xml did not reach the process
+        success_msg: "Apache NiFi accepts the credentials the role configured"
+
+    - name: Query the version of the running Apache NiFi
+      ansible.builtin.uri:
+        url: "{{ nifi_base_url }}/nifi-api/flow/about"
+        method: GET
+        headers:
+          Authorization: "Bearer {{ nifi_token.content }}"
+        validate_certs: false
+        status_code: [200, 401, 403]
+      register: nifi_about
+      failed_when: false
+
+    - name: Assert the running Apache NiFi is the version this role installs
+      ansible.builtin.assert:
+        that:
+          - nifi_about.status == 200
+          - nifi_about.json.about.version == nifi_defaults.nifi_version
+          - nifi_about.json.about.buildTag == 'rel/nifi-' + nifi_defaults.nifi_version
+        fail_msg: "Apache NiFi reports {{ nifi_about.json.about.version | default('none') }}, expected {{ nifi_defaults.nifi_version }}"
+        success_msg: "Apache NiFi reports {{ nifi_about.json.about.version }}"
+
+    - name: Read the marker file mounted through nifi_container_additional_volumes
+      ansible.builtin.command:
+        cmd: docker exec nifi cat /nifi-molecule-extra/marker.txt
+      register: nifi_additional_volume
+      changed_when: false
+      failed_when: false
+
+    - name: Assert that nifi_container_additional_volumes is rendered into the container
+      ansible.builtin.assert:
+        that: "'mounted-via-nifi_container_additional_volumes' in (nifi_additional_volume.stdout | default(''))"
+        fail_msg: >-
+          The directory named by nifi_container_additional_volumes_custom is not mounted in the
+          container, so that variable is not reaching the `docker create` command as a `--mount`
+        success_msg: "nifi_container_additional_volumes is rendered into the container as a --mount"
+
+    # This role is unusual in that it ships upstream's own configuration files verbatim under
+    # files/conf/ and reapplies its customizations on top of them at install time. A new Apache
+    # NiFi release that changes any of them therefore needs those copies refreshed by hand, as
+    # docs/updating-nifi.md describes. Comparing them against the image the role actually pins
+    # turns that manual procedure into something CI enforces, which is what makes it safe to let
+    # a patch-level version bump merge without a human reading the diff.
+    - name: Copy the shipped Apache NiFi configuration files to the test host
+      ansible.builtin.copy:
+        src: "{{ lookup('ansible.builtin.env', 'MOLECULE_PROJECT_DIRECTORY') }}/files/conf/"
+        dest: /tmp/nifi-shipped-conf/
+        mode: "0644"
+
+    - name: Checksum the shipped Apache NiFi configuration files
+      ansible.builtin.command:
+        cmd: sh -c 'cd /tmp/nifi-shipped-conf && sha256sum * | sort -k 2'
+      register: nifi_shipped_conf
+      changed_when: false
+
+    - name: Checksum the upstream configuration files inside the Apache NiFi image
+      ansible.builtin.command:
+        cmd: >-
+          docker run --rm --entrypoint sh
+          docker.io/apache/nifi:{{ nifi_defaults.nifi_version }}
+          -c 'cd /opt/nifi/nifi-current/conf && sha256sum
+          authorizers.xml bootstrap.conf logback.xml login-identity-providers.xml
+          nifi.properties state-management.xml zookeeper.properties | sort -k 2'
+      register: nifi_image_conf
+      changed_when: false
+
+    - name: Assert that the shipped configuration files match the pinned Apache NiFi image
+      ansible.builtin.assert:
+        that: nifi_shipped_conf.stdout == nifi_image_conf.stdout
+        fail_msg: >-
+          files/conf/ no longer matches apache/nifi:{{ nifi_defaults.nifi_version }}.
+          Refresh those files from the new image and re-check the `nifi_*_replacements_default`
+          variables, as described in docs/updating-nifi.md.
+        success_msg: "files/conf/ matches apache/nifi:{{ nifi_defaults.nifi_version }}"
+
+    # The scenario leaves `nifi_identifier` at its default, so the base path is /nifi.
+    - name: Read the container label file
+      ansible.builtin.slurp:
+        src: /nifi/labels
+      register: nifi_labels
+
+    # Traefik is disabled in this scenario, so not one Traefik label may be emitted. Roles across
+    # this fleet have repeatedly grown labels outside the `traefik_enabled` conditional.
+    - name: Assert that no Traefik labels are emitted while Traefik is disabled
+      ansible.builtin.assert:
+        that: "'traefik' not in (nifi_labels.content | b64decode)"
+        fail_msg: "Traefik labels are emitted even though nifi_container_labels_traefik_enabled is false"
+        success_msg: "No Traefik labels are emitted while Traefik is disabled"
+
+    - name: Show the Apache NiFi verification summary
       ansible.builtin.debug:
         msg:
           - "Apache NiFi systemd: {{ nifi_service.status.ActiveState }}"
-          - "Apache NiFi HTTPS: {{ nifi_endpoint_https.status }}"
+          - "Apache NiFi version: {{ nifi_about.json.about.version }} (build tag {{ nifi_about.json.about.buildTag }})"
+          - "Apache NiFi web interface on port {{ nifi_container_https_port }}: HTTP {{ nifi_web_interface.status }}"
+          - "Apache NiFi unauthenticated API request: HTTP {{ nifi_about_anonymous.status }}"
+          - "Apache NiFi login with a wrong password: HTTP {{ nifi_token_wrong.status }}"
+          - "Apache NiFi login with the configured credentials: HTTP {{ nifi_token.status }}"

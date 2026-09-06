@@ -23,11 +23,21 @@ reapplied on next install.
 
 ## When to run this procedure
 
-On each new upstream Apache NiFi release. Renovate is configured to watch the
-`apache/nifi` Docker tag (see the `# renovate:` comment in
-[`defaults/main.yml`](../defaults/main.yml)) and will usually open the
-version-bump PR automatically; the conf/script reconciliation below is what
-still has to be done by hand on top of that PR.
+On each new upstream Apache NiFi **minor or major** release. Renovate is
+configured to watch the `apache/nifi` Docker tag (see the `# renovate:` comment
+in [`defaults/main.yml`](../defaults/main.yml)) and opens the version-bump pull
+request automatically; the conf/script reconciliation below is what still has to
+be done by hand on top of that pull request.
+
+**Patch releases do not normally need any of this**, and are automerged once CI
+is green (see [`.github/renovate.json`](../.github/renovate.json)). That is not
+a matter of trust: the Molecule scenario compares the files this role ships in
+[`files/conf/`](../files/conf/) against the image `nifi_version` pins and fails
+the build if they have drifted apart. So if upstream ever does change a shipped
+configuration file in a patch release, the automerge is blocked and this
+procedure has to be run after all. Measured across `2.7.0` → `2.7.1` → `2.7.2`
+and `1.28.0` → `1.28.1`, upstream has not changed either the configuration files
+or the startup scripts in a patch release.
 
 ## Prerequisites
 
@@ -136,8 +146,10 @@ rm -rf /tmp/nifi-new
   [`.pre-commit-config.yaml`](../.pre-commit-config.yaml)), so refreshed
   upstream files are left byte-for-byte as shipped.
 - End-to-end: run the Molecule scenario, which installs the role, starts the
-  container and asserts both that `nifi.service` becomes active and that the
-  web UI responds:
+  container, logs in with the configured credentials, asserts that the running
+  process reports the pinned version, and asserts that `files/conf/` matches the
+  pinned image — so a forgotten Step 3 fails here rather than in production
+  (see [`molecule/README.md`](../molecule/README.md)):
 
   ```sh
   molecule test --scenario-name default

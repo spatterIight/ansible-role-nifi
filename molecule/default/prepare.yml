@@ -1,3 +1,4 @@
+# SPDX-FileCopyrightText: 2026 Slavi Pantaleev
 # SPDX-FileCopyrightText: 2026 spatterlight
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
@@ -24,9 +25,17 @@
     - name: Ensure required packages are installed for Apache NiFi Molecule tests preparation
       ansible.builtin.package:
         name:
+          # Used by the `ansible.builtin.uri` calls in verify.yml
           - python3-requests
+          # Used by the `community.general.xml` tasks the role runs
           - python3-lxml
+          # Provides `keytool`, which `community.general.java_keystore` and `java_cert` shell out to
           - default-jdk-headless
+          # The storage driver Docker is configured with below. `overlay2` cannot be nested inside
+          # the container Molecule runs these tests in, and `vfs` (the usual fallback) has no
+          # copy-on-write, so it writes out every layer of the image in full. Apache NiFi's image
+          # unpacks to ~2.4 GB, which makes that difference expensive.
+          - fuse-overlayfs
         state: present
 
     - name: Ensure Docker is installed for Apache NiFi Molecule tests preparation
@@ -34,4 +43,19 @@
         name: ansible-role-docker
       vars:
         docker_daemon_options:
-          storage-driver: vfs
+          storage-driver: fuse-overlayfs
+
+    # Mounted into the container through `nifi_container_additional_volumes_custom` (see molecule.yml),
+    # so that verify.yml can tell whether that variable really reaches the `docker create` command
+    # instead of being silently inert.
+    - name: Ensure directory for the additional volume check exists for Apache NiFi Molecule tests preparation
+      ansible.builtin.file:
+        path: /nifi-molecule-extra
+        state: directory
+        mode: "0755"
+
+    - name: Ensure marker file for the additional volume check exists for Apache NiFi Molecule tests preparation
+      ansible.builtin.copy:
+        content: "mounted-via-nifi_container_additional_volumes\n"
+        dest: /nifi-molecule-extra/marker.txt
+        mode: "0644"

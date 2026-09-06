@@ -49,6 +49,17 @@ Currently there is one testing scenario available.
 
 Tests a standard Apache NiFi installation.
 
+The verification does not stop at "the systemd service is active" — the unit is `Restart=always`, so a crash-looping container reports `active` too. It:
+
+- waits for Apache NiFi's own web interface rather than for the unit, which for a JVM application of this size takes minutes rather than seconds
+- establishes that the API refuses unauthenticated requests and that a wrong password is rejected, so that the two checks below are able to fail in the first place
+- logs in with the credentials the role bcrypt-hashes into `conf/login-identity-providers.xml`. A stock Apache NiFi generates a random UUID username and a random password instead and answers this with `400`, so a container running on anything but the role's configuration cannot pass this
+- asserts that the running process reports the version `nifi_version` pins, via `/nifi-api/flow/about`
+- asserts that `files/conf/` still matches the pinned image, which is the by-hand reconciliation [docs/updating-nifi.md](../docs/updating-nifi.md) describes, turned into something CI enforces
+- asserts that `nifi_container_additional_volumes` really reaches `docker create` as a `--mount`, and that no Traefik labels are emitted while Traefik is disabled
+
+The scenario deliberately runs Apache NiFi on port 9443 rather than the 8443 its own image defaults to. The container only publishes the port the role was told about, so a NiFi that ignored the role's `nifi.properties` would be listening where nothing is mapped and the web interface check would time out.
+
 ## Running
 
 By default it is configured to run the scenarios on Ubuntu 26.04.

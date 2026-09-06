@@ -1,3 +1,4 @@
+# SPDX-FileCopyrightText: 2026 Slavi Pantaleev
 # SPDX-FileCopyrightText: 2026 spatterlight
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
@@ -17,10 +18,10 @@ platforms:
     volumes:
       - /sys/fs/cgroup:/sys/fs/cgroup:rw
     cgroupns_mode: host
+    # Also what gives the inner Docker a /dev/fuse to hand to fuse-overlayfs.
+    # See prepare.yml for why that storage driver is not the fleet's usual vfs.
     privileged: true
     pre_build_image: true
-    published_ports:
-      - 127.0.0.1:8443:8443
 provisioner:
   name: ansible
   config_options:
@@ -38,9 +39,23 @@ provisioner:
         nifi_hostname: localhost
         nifi_self_signed_cert_passphrase: MoleculeTestCertPass123!
         nifi_sensitive_props_key: MoleculeTestSensitiveKey123!
+        nifi_login_username: molecule-admin
         nifi_login_password: MoleculeTestPassword123!
         nifi_container_labels_traefik_enabled: false
-        nifi_container_https_host_bind_port: 8443
+
+        # Deliberately not the 8443 that Apache NiFi's own image defaults to, so that reaching
+        # the web interface on this port proves the role's `nifi.web.https.port` replacement
+        # reached the process rather than the image's built-in default having been good enough.
+        nifi_container_https_port: 9443
+        nifi_container_https_host_bind_port: 9443
+
+        # Checked in verify.yml, so that this variable cannot silently stop being rendered
+        # into the `docker create` command as a `--mount` argument.
+        nifi_container_additional_volumes_custom:
+          - type: bind
+            src: /nifi-molecule-extra
+            dst: /nifi-molecule-extra
+            options: readonly
   env:
     # This is a hack to resolve https://github.com/ansible/molecule/issues/4391
     ANSIBLE_ROLES_PATH: ${MOLECULE_PROJECT_DIRECTORY}/..:/.ansible/roles:/usr/share/ansible/roles:/etc/ansible/roles:~/.ansible/roles

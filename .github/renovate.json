@@ -1,51 +1,11 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": [
+    "Patch-level bumps of Apache NiFi automerge here: the Molecule run logs in with the credentials the role configures, asserts that the process reports the version defaults/main.yml pins, and fails if files/conf/ stops matching that image - which is the by-hand reconciliation docs/updating-nifi.md describes, turned into a gate.",
+    "Measured before enabling this: across 2.7.0 -> 2.7.1 -> 2.7.2 and 1.28.0 -> 1.28.1 the shipped configuration and startup scripts are byte-identical, and restarting a 2.7.0 instance on 2.7.2 over the same conf/state/repository directories keeps its credentials and logs no flow differences. Minor and major bumps stay human-reviewed pull requests."
+  ],
   "extends": [
-    "config:best-practices",
-    ":automergeAll",
-    ":automergeBranch",
-    ":semanticCommitsDisabled"
-  ],
-  "ignorePresets": [
-    "docker:pinDigests",
-    ":maintainLockFilesWeekly"
-  ],
-  "labels": [
-    "dependencies"
-  ],
-  "ansible-galaxy": {
-    "ignoreUnstable": false,
-    "versioning": "loose"
-  },
-  "pre-commit": {
-    "enabled": true
-  },
-  "regex": {
-    "automerge": false
-  },
-  "packageRules": [
-    {
-      "matchManagers": ["github-actions"],
-      "commitBody": "[skip ci]",
-      "schedule": ["* * 1-7 */6 *"],
-      "automergeSchedule": ["* * 1-14 */6 *"],
-      "groupName": "GitHub Actions dependencies"
-    },
-    {
-      "matchManagers": ["mise", "pip_requirements", "pre-commit", "pyenv"],
-      "schedule": ["* * 1-7 */6 *"],
-      "automergeSchedule": ["* * 1-14 */6 *"]
-    }
-  ],
-  "customManagers": [
-    {
-      "customType": "regex",
-      "managerFilePatterns": [
-        "/defaults/main.yml$/"
-      ],
-      "matchStrings": [
-        "# renovate: datasource=(?<datasource>[a-z-.]+?) depName=(?<depName>[^\\s]+?)(?: (?:lookupName|packageName)=(?<packageName>[^\\s]+?))?(?: versioning=(?<versioning>[a-z-0-9]+?))?\\s+[A-Za-z0-9_]+?(?:_version|_tag)\\s*:\\s*[\"']?(?<currentValue>.+?)[\"']?\\s"
-      ]
-    }
+    "github>mother-of-all-self-hosting/renovate-config#v1.0.0",
+    "github>mother-of-all-self-hosting/renovate-config//patch-automerge#v1.0.0"
   ]
 }

@@ -123,14 +123,9 @@ After running the command for installation, Apache NiFi becomes available at the
 
 To get started, open the URL with a web browser to log in to the instance.
 
-To log in to the instance use your configured credentials, or the randomly generated ones printed to the log.
+To log in to the instance, use the `nifi_login_username` and `nifi_login_password` that you configured. This role always configures them — the playbook refuses to run without a `nifi_login_password` — so Apache NiFi's fallback of generating a random username and password on first start and printing them to the log (`Generated Username [...]` / `Generated Password [...]`) does not happen here.
 
-Log Example:
-
-```bash
-Nov 20 13:20:24 server mash-nifi[1990462]: Generated Username [d4a56f91-fcaf-4f6b-b83f-b21ea177c25b]
-Nov 20 13:20:24 server mash-nifi[1990462]: Generated Password [tlRhxiDso0cvWrLROwtkagpmk1Qwx1Rt]
-```
+Note that `nifi_login_password` is bcrypt-hashed with a fixed salt (`nifi_login_salt`), so that re-running the playbook does not produce a different hash every time and needlessly report the task as changed. The consequence is that the same password produces the same hash on every installation of this role, so choose a password with enough entropy to stand on its own (`pwgen -s 32 1`, or some other way).
 
 ## Troubleshooting
 
