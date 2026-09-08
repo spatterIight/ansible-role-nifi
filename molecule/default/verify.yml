@@ -30,17 +30,20 @@
       until: nifi_service.status.ActiveState == 'active'
       retries: 36
       delay: 5
+      # So that giving up is reported by the assertion below rather than as a
+      # wall of systemd unit properties.
       failed_when: false
 
-    # On its own this proves very little: the unit is `Restart=always`, so a crash-looping
-    # container also reports `active`. The checks below are what actually gate this scenario.
+    # `Restart=always` in the systemd unit means that even a container which crashes
+    # and gets restarted reads as active here, so this is a precondition rather than
+    # a result.
     - name: Assert that the Apache NiFi systemd service is active
       ansible.builtin.assert:
         that: nifi_service.status.ActiveState == 'active'
-        fail_msg: "nifi.service is not active ({{ nifi_service.status.ActiveState | default('unknown') }})"
+        fail_msg: "nifi.service is not active ({{ nifi_service.status.ActiveState }})"
         success_msg: "nifi.service is active"
 
-    - name: Retrieve the Apache NiFi service log for debugging
+    - name: Retrieve the Apache NiFi systemd service log for debugging
       when: nifi_debug_service_enabled | bool
       ansible.builtin.command:
         cmd: journalctl -xeu nifi.service
