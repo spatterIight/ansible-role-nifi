@@ -46,7 +46,7 @@
     - name: Retrieve the Apache NiFi systemd service log for debugging
       when: nifi_debug_service_enabled | bool
       ansible.builtin.command:
-        cmd: journalctl -xeu nifi.service
+        cmd: journalctl --no-pager --output=cat --unit=nifi.service
       changed_when: false
 
     # Apache NiFi is a large JVM application and needs minutes, not seconds, before it accepts
