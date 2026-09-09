@@ -15,6 +15,8 @@
     nifi_base_url: "https://localhost:{{ nifi_container_https_port }}"
 
   tasks:
+    - name: Verify that Apache NiFi works
+      block:
     # The role is not included in this playbook, so its defaults are not in
     # scope. Reading defaults/main.yml directly ties the version assertion
     # below.
@@ -247,3 +249,19 @@
           - "Apache NiFi unauthenticated API request: HTTP {{ nifi_about_anonymous.status }}"
           - "Apache NiFi login with a wrong password: HTTP {{ nifi_token_wrong.status }}"
           - "Apache NiFi login with the configured credentials: HTTP {{ nifi_token.status }}"
+
+      rescue:
+        # Whatever went wrong, the reason is almost always in the systemd service log.
+        - name: Retrieve the Apache NiFi systemd service log
+          ansible.builtin.command:
+            cmd: journalctl --no-pager --output=cat --unit=nifi.service
+          register: nifi_service_log
+          changed_when: false
+
+        - name: Show the Apache NiFi systemd service log
+          ansible.builtin.debug:
+            var: nifi_service_log.stdout_lines
+
+        - name: Fail because verification did not pass
+          ansible.builtin.fail:
+            msg: "Apache NiFi verification failed. The systemd service log is printed above."
