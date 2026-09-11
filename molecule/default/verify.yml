@@ -14,6 +14,10 @@
     # not Apache NiFi's own default of 8443. See molecule.yml.
     nifi_base_url: "https://localhost:{{ nifi_container_https_port }}"
 
+  vars:
+    nifi_verify_units:
+      - nifi.service
+
   tasks:
     - name: Verify that Apache NiFi works
       block:
@@ -25,13 +29,14 @@
             file: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/defaults/main.yml"
             name: nifi_defaults
 
-        - name: Wait for the Apache NiFi systemd service to become active (up to 180s)
+        - name: Wait for the Apache NiFi systemd services to become active (up to 180s each)
           ansible.builtin.systemd_service:
-            name: nifi.service
-          register: nifi_service
-          until: nifi_service.status.ActiveState == 'active'
+            name: "{{ item }}"
+          register: nifi_services
+          until: nifi_services.status.ActiveState == 'active'
           retries: 36
           delay: 5
+          loop: "{{ nifi_verify_units }}"
           # So that giving up is reported by the assertion below rather than as a
           # wall of systemd unit properties.
           failed_when: false
@@ -39,17 +44,20 @@
         # `Restart=always` in the systemd unit means that even a container which crashes
         # and gets restarted reads as active here, so this is a precondition rather than
         # a result.
-        - name: Assert that the Apache NiFi systemd service is active
+        - name: Assert the Apache NiFi systemd services are active
           ansible.builtin.assert:
-            that: nifi_service.status.ActiveState == 'active'
-            fail_msg: "nifi.service is not active ({{ nifi_service.status.ActiveState }})"
-            success_msg: "nifi.service is active"
+            that: nifi_services.results | map(attribute='status.ActiveState') | unique | list == ['active']
+            fail_msg: >-
+              Not every service is active:
+              {{ dict(nifi_verify_units | zip(nifi_services.results | map(attribute='status.ActiveState'))) }}
+            success_msg: "Every systemd service is active"
 
-        - name: Retrieve the Apache NiFi systemd service log for debugging
+        - name: Retrieve the Apache NiFi systemd services log for debugging
           when: nifi_debug_service_enabled | bool
           ansible.builtin.command:
-            cmd: journalctl --no-pager --output=cat --unit=nifi.service
+            cmd: "journalctl --no-pager --output=cat --unit={{ item }}"
           changed_when: false
+          loop: "{{ nifi_verify_units }}"
 
         # Apache NiFi is a large JVM application and needs minutes, not seconds, before it accepts
         # connections. Until then the port is simply closed, so this loop is what separates
@@ -243,7 +251,7 @@
         - name: Show the Apache NiFi verification summary
           ansible.builtin.debug:
             msg:
-              - "Apache NiFi systemd: {{ nifi_service.status.ActiveState }}"
+              - "Apache NiFi systemd: {% for unit, state in nifi_verify_units | zip(nifi_services.results | map(attribute='status.ActiveState')) %}{{ unit }} ({{ state }}){% if not loop.last %}, {% endif %}{% endfor %}"
               - "Apache NiFi version: {{ nifi_about.json.about.version }} (build tag {{ nifi_about.json.about.buildTag }})"
               - "Apache NiFi web interface on port {{ nifi_container_https_port }}: HTTP {{ nifi_web_interface.status }}"
               - "Apache NiFi unauthenticated API request: HTTP {{ nifi_about_anonymous.status }}"
