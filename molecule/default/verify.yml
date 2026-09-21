@@ -14,7 +14,6 @@
     # not Apache NiFi's own default of 8443. See molecule.yml.
     nifi_base_url: "https://localhost:{{ nifi_container_https_port }}"
 
-  vars:
     nifi_verify_units:
       - nifi.service
 
