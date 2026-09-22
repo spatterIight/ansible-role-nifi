@@ -11,7 +11,7 @@ config files verbatim in [`files/conf/`](../files/conf/) and a pair of custom
 startup scripts in [`files/scripts/`](../files/scripts/). On a new release the
 config files usually need to be refreshed from the new image, but the scripts
 deliberately diverge from upstream and should only be touched under specific
-conditions (see [Step 4](#step-4--reconcile-filesscripts)).
+conditions (refer to [Step 4](#step-4--reconcile-filesscripts)).
 
 The role's installer (`tasks/install.yml`) applies customizations on top of
 `files/conf/` at install time via `community.general.xml` (for XML files) and
@@ -30,7 +30,7 @@ request automatically; the conf/script reconciliation below is what still has to
 be done by hand on top of that pull request.
 
 **Patch releases do not normally need any of this**, and are automerged once CI
-is green (see [`.github/renovate.json`](../.github/renovate.json)). That is not
+is green (refer to [`.github/renovate.json`](../.github/renovate.json)). That is not
 a matter of trust: the Molecule scenario compares the files this role ships in
 [`files/conf/`](../files/conf/) against the image `nifi_version` pins and fails
 the build if they have drifted apart. So if upstream ever does change a shipped
@@ -149,13 +149,13 @@ rm -rf /tmp/nifi-new
   container, logs in with the configured credentials, asserts that the running
   process reports the pinned version, and asserts that `files/conf/` matches the
   pinned image — so a forgotten Step 3 fails here rather than in production
-  (see [`molecule/README.md`](../molecule/README.md)):
+  (refer to [`molecule/README.md`](../molecule/README.md)):
 
   ```sh
   molecule test --scenario-name default
   ```
 
-  See [`molecule/README.md`](../molecule/README.md) for setup, and
+  Refer to [`molecule/README.md`](../molecule/README.md) for setup, and
   [`molecule/default/molecule.yml`](../molecule/default/molecule.yml) for the
   `nifi_debug_service_enabled` flag, which dumps `journalctl -xeu nifi.service`
   when the scenario fails.
