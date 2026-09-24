@@ -5,7 +5,7 @@
     "Measured before enabling this: across 2.7.0 -> 2.7.1 -> 2.7.2 and 1.28.0 -> 1.28.1 the shipped configuration and startup scripts are byte-identical, and restarting a 2.7.0 instance on 2.7.2 over the same conf/state/repository directories keeps its credentials and logs no flow differences. Minor and major bumps stay human-reviewed pull requests."
   ],
   "extends": [
-    "github>mother-of-all-self-hosting/renovate-config#v1.0.0",
-    "github>mother-of-all-self-hosting/renovate-config//patch-automerge#v1.0.0"
+    "github>mother-of-all-self-hosting/renovate-config#v1.1.0",
+    "github>mother-of-all-self-hosting/renovate-config//patch-automerge#v1.1.0"
   ]
 }
