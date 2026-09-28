@@ -35,6 +35,20 @@ provisioner:
         nifi_debug_service_enabled: false
         nifi_restarts_check_enabled: true
 
+        # The host directory mounted into the container through
+        # `nifi_container_additional_volumes_custom`, and the file placed in it by
+        # prepare.yml. Reading that file from inside the container is what
+        # proves the additional volumes reach the systemd unit rather than
+        # being merely declared in defaults/main.yml.
+        nifi_molecule_extra_volume_src: /nifi-molecule-extra
+        nifi_molecule_extra_volume_dst: /molecule-extra
+        nifi_molecule_extra_volume_marker: only-a-real-bind-mount-can-read-this
+
+        # Files placed on the host under the paths the role bind-mounts. Apache NiFi
+        # itself is asked to list them back, so a mount that docker accepted but
+        # the process cannot see does not pass.
+        nifi_molecule_marker_filename: jackett-molecule-marker.txt
+
         # Variables for Apache NiFi
         nifi_uid: 1000
         nifi_gid: 1000
@@ -51,12 +65,10 @@ provisioner:
         nifi_container_https_port: 9443
         nifi_container_https_host_bind_port: 9443
 
-        # Checked in verify.yml, so that this variable cannot silently stop being rendered
-        # into the `docker create` command as a `--mount` argument.
         nifi_container_additional_volumes_custom:
           - type: bind
-            src: /nifi-molecule-extra
-            dst: /nifi-molecule-extra
+            src: "{{ nifi_molecule_extra_volume_src }}"
+            dst: "{{ nifi_molecule_extra_volume_dst }}"
             options: readonly
   env:
     # This is a hack to resolve https://github.com/ansible/molecule/issues/4391

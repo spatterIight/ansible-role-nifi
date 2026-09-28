@@ -47,17 +47,20 @@
           # nested-container isolation without the copying.
           storage-driver: fuse-overlayfs
 
-    # Mounted into the container through `nifi_container_additional_volumes_custom` (see molecule.yml),
-    # so that verify.yml can tell whether that variable really reaches the `docker create` command
-    # instead of being silently inert.
-    - name: Ensure directory for the additional volume check exists for Apache NiFi Molecule tests preparation
+    # Bind-mounted into the Apache NiFi container through
+    # `nifi_container_additional_volumes_custom`. The role does not create the source
+    # of an additional volume, so it has to exist before the container is
+    # created, or `docker create` refuses the bind. verify.yml reads the marker
+    # file back from inside the container, which only works if the systemd unit
+    # really carries the additional volumes.
+    - name: Ensure the additional volume directory exists for Apache NiFi Molecule tests
       ansible.builtin.file:
-        path: /nifi-molecule-extra
+        path: "{{ nifi_molecule_extra_volume_src }}"
         state: directory
         mode: "0755"
 
-    - name: Ensure marker file for the additional volume check exists for Apache NiFi Molecule tests preparation
+    - name: Ensure a marker file exists in the Apache NiFi Molecule additional volume
       ansible.builtin.copy:
-        content: "mounted-via-nifi_container_additional_volumes\n"
-        dest: /nifi-molecule-extra/marker.txt
+        content: "{{ nifi_molecule_extra_volume_marker }}\n"
+        dest: "{{ nifi_molecule_extra_volume_src }}/{{ nifi_molecule_marker_filename }}"
         mode: "0644"

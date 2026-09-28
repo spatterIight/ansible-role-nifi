@@ -74,6 +74,56 @@
           delay: 5
           failed_when: false
 
+        - name: Inspect the Apache NiFi container
+          ansible.builtin.command:
+            cmd: docker container inspect nifi
+          register: nifi_container_raw
+          changed_when: false
+
+        - name: Parse the Apache NiFi container definition
+          ansible.builtin.set_fact:
+            nifi_container: "{{ (nifi_container_raw.stdout | from_json)[0] }}"
+
+        # ------------------------------------------------------------------
+        # What the role told Docker to run
+        # ------------------------------------------------------------------
+
+        - name: Collect the mounts the role asked for
+          ansible.builtin.set_fact:
+            nifi_extra_mount: "{{ nifi_container.Mounts | selectattr('Destination', 'equalto', nifi_molecule_extra_volume_dst) | list }}"
+
+        # nifi_container_additional_volumes_custom has been inert in several roles in
+        # this collection - rendered into a comment, or into a `-v` that silently
+        # dropped the options. Both the destination and the readonly option have
+        # to arrive.
+        - name: Assert that nifi_container_additional_volumes_custom reached the container
+          ansible.builtin.assert:
+            that:
+              - nifi_extra_mount | length == 1
+              - nifi_extra_mount[0].Type == 'bind'
+              - nifi_extra_mount[0].Source == nifi_molecule_extra_volume_src
+              - not nifi_extra_mount[0].RW
+            fail_msg: "The additional volume did not reach the container: {{ nifi_container.Mounts }}"
+            success_msg: "The additional volume is mounted read-only at {{ nifi_molecule_extra_volume_dst }}"
+
+        # Reading the file back from inside the
+        # container is the difference between the variable existing and it working.
+        - name: Read the marker through the additional volume
+          ansible.builtin.command:
+            cmd: >-
+              docker exec nifi
+              cat {{ nifi_molecule_extra_volume_dst }}/{{ nifi_molecule_marker_filename }}
+          register: nifi_extra_volume
+          changed_when: false
+
+        - name: Assert the additional volume is mounted into the Apache NiFi container
+          ansible.builtin.assert:
+            that:
+              - nifi_extra_volume.rc == 0
+              - nifi_extra_volume.stdout | trim == nifi_molecule_extra_volume_marker
+            fail_msg: "The additional volume did not carry the marker into the container"
+            success_msg: "The additional volume carries the marker into the container"
+
         # Reaching this on `nifi_container_https_port` (9443 in this scenario) is what proves that
         # the role's `nifi.web.https.port` replacement reached the process: Apache NiFi's own image
         # ships 8443, and the container only publishes the port the role was told about, so a NiFi
@@ -85,6 +135,10 @@
               Apache NiFi did not serve its web interface on port {{ nifi_container_https_port }}
               (got {{ nifi_web_interface.status | default('no response') }})
             success_msg: "Apache NiFi serves its web interface on port {{ nifi_container_https_port }}"
+
+        # ------------------------------------------------------------------
+        # Authentication
+        # ------------------------------------------------------------------
 
         # A negative control for the two checks that follow. If the API were reachable without a
         # token, "logged in successfully" and "reported this version" would prove nothing at all.
@@ -179,21 +233,6 @@
               - nifi_about.json.about.buildTag == 'rel/nifi-' + nifi_defaults.nifi_version
             fail_msg: "Apache NiFi reports {{ nifi_about.json.about.version | default('none') }}, expected {{ nifi_defaults.nifi_version }}"
             success_msg: "Apache NiFi reports {{ nifi_about.json.about.version }}"
-
-        - name: Read the marker file mounted through nifi_container_additional_volumes
-          ansible.builtin.command:
-            cmd: docker exec nifi cat /nifi-molecule-extra/marker.txt
-          register: nifi_additional_volume
-          changed_when: false
-          failed_when: false
-
-        - name: Assert that nifi_container_additional_volumes is rendered into the container
-          ansible.builtin.assert:
-            that: "'mounted-via-nifi_container_additional_volumes' in (nifi_additional_volume.stdout | default(''))"
-            fail_msg: >-
-              The directory named by nifi_container_additional_volumes_custom is not mounted in the
-              container, so that variable is not reaching the `docker create` command as a `--mount`
-            success_msg: "nifi_container_additional_volumes is rendered into the container as a --mount"
 
         # This role is unusual in that it ships upstream's own configuration files verbatim under
         # files/conf/ and reapplies its customizations on top of them at install time. A new Apache
